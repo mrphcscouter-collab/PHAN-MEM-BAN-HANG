@@ -173,7 +173,7 @@ button{min-height:40px}
 <div id="toast"></div>
 <style id="pgstyle"></style>
 <input type="file" id="file" accept=".json" hidden>
-<input type="file" id="fcsv" accept=".csv,text/csv" hidden>
+<input type="file" id="fcsv" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 
 <script>
 const K='ban_hang_offline_v1';
@@ -511,8 +511,8 @@ function products(){
    <div class="form" style="grid-template-columns:1fr 1fr 2fr auto;margin-bottom:12px"><label>Tên thuộc tính<input id="an" placeholder="Kích thước, Màu, Đường kính…"></label><label>Áp dụng cho danh mục<select id="ac"><option value="">Tất cả danh mục</option>${catOpts()}</select></label><label>Giá trị gợi ý (cách nhau bằng dấu phẩy)<input id="av" placeholder="60x60, 80x80"></label><button class="pri" data-aadd>Thêm thuộc tính</button></div>
    <table><tr><th>Thuộc tính</th><th>Áp dụng cho</th><th>Giá trị gợi ý</th><th class="n">Sản phẩm đang dùng</th><th></th></tr>${db.attrs.map(a=>`<tr><td>${esc(a.name)}</td><td>${a.cat?esc(a.cat):'Tất cả danh mục'}</td><td>${esc(a.values.join(', '))}</td><td class="n">${db.products.filter(p=>(p.attrs||{})[a.id]).length}</td><td class="n"><button class="ghost" data-aval="${a.id}">Giá trị</button><button class="ghost" data-aren="${a.id}">Đổi tên</button><button class="ghost danger" data-adel="${a.id}">Xóa</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Chưa có thuộc tính.</td></tr>'}</table><small>Thuộc tính áp dụng cho cả danh mục con. Khi lọc theo một danh mục, bảng sản phẩm hiện thêm ô lọc theo từng thuộc tính.</small></div>
   <div class="card"><h2>Danh mục hàng hóa (<span id="pcnt"></span>)</h2>
-   <div class="fb"><input id="psr" placeholder="Tìm mã, barcode, tên, thương hiệu, quy cách (gõ không dấu cũng được)" value="${esc(pSearch)}"><select id="fc"><option value="">Mọi danh mục</option>${catOpts(fc)}</select><select id="pst">${[['','Mọi trạng thái'],['in','Còn hàng'],['low','Sắp hết'],['out','Hết hàng'],['neg','Tồn âm'],['off','Ngừng bán']].map(([v,l])=>`<option value="${v}" ${v===pSt?'selected':''}>${l}</option>`).join('')}</select><button class="ghost" data-csvimp>Nhập từ file CSV</button><button class="ghost" data-csvtpl>Tải file mẫu</button></div>
-   <div class="fb" id="aflt"></div><div id="plist"></div></div>`;
+   <div class="fb"><input id="psr" placeholder="Tìm mã, barcode, tên, thương hiệu, quy cách (gõ không dấu cũng được)" value="${esc(pSearch)}"><select id="fc"><option value="">Mọi danh mục</option>${catOpts(fc)}</select><select id="pst">${[['','Mọi trạng thái'],['in','Còn hàng'],['low','Sắp hết'],['out','Hết hàng'],['neg','Tồn âm'],['off','Ngừng bán']].map(([v,l])=>`<option value="${v}" ${v===pSt?'selected':''}>${l}</option>`).join('')}</select><button class="ghost" data-csvimp>Nhập từ file Excel</button><button class="ghost" data-csvtpl>Tải file Excel mẫu</button><button class="ghost" data-xlexp>Xuất danh sách ra Excel</button></div>
+   <small>Nhập hàng loạt: bấm "Tải file Excel mẫu", điền dữ liệu rồi chọn "Nhập từ file Excel" (nhận cả file CSV). Dòng có SKU đã tồn tại sẽ cập nhật sản phẩm đó. "Xuất danh sách ra Excel" giúp sửa giá hàng loạt rồi nhập lại.</small><div class="fb" id="aflt"></div><div id="plist"></div></div>`;
   $('#psr').oninput=ev=>{pSearch=ev.target.value;PG.pl=1;drawPL()};$('#fc').onchange=ev=>{fc=ev.target.value;af={};PG.pl=1;drawAF();drawPL()};$('#pst').onchange=ev=>{pSt=ev.target.value;PG.pl=1;drawPL()};
   $('#nc').onkeydown=ev=>{if(ev.key==='Enter')addCat()};
   const src=e||cs;
@@ -596,9 +596,97 @@ function drawUnits(){
 }
 const CSVH=['SKU','Barcode','Tên sản phẩm','Danh mục (cha > con)','Thương hiệu','Quy cách','ĐVT cơ sở','Số ĐVT mỗi hộp/thùng (cũ)','Giá vốn','Giá bán lẻ','Giá thợ','Tồn tối thiểu','Tồn đầu kỳ','Thuộc tính (Tên=Giá trị; …)','Quy đổi (hộp=1.44; thùng=6)'];
 const kv=t=>String(t||'').split(';').map(x=>x.split('=').map(y=>y.trim())).filter(a=>a[0]&&a[1]);
+/* ---------- Excel (.xlsx): đọc và ghi trực tiếp, không cần thư viện, chạy offline ---------- */
+const te=new TextEncoder(),td=new TextDecoder(),XMIME='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){
+  const u16=n=>[n&255,(n>>8)&255],u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>>24)&255],parts=[],cd=[];let off=0;
+  files.forEach(f=>{const nm=te.encode(f.name),d=f.data,crc=crc32(d);
+    const lh=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(d.length),...u32(d.length),...u16(nm.length),...u16(0)]);
+    parts.push(lh,nm,d);
+    cd.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(d.length),...u32(d.length),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);
+    off+=lh.length+nm.length+d.length});
+  const sz=cd.reduce((a,x)=>a+x.length,0);
+  return new Blob([...parts,...cd,new Uint8Array([0x50,0x4b,5,6,...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(sz),...u32(off),...u16(0)])],{type:XMIME});
+}
+const xe=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+const colL=i=>{let r='';i++;while(i>0){const m=(i-1)%26;r=String.fromCharCode(65+m)+r;i=Math.floor((i-1)/26)}return r};
+const XH='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n',XNS='xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+const XSTYLES=XH+`<styleSheet ${XNS}><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFD0D5DD"/></left><right style="thin"><color rgb="FFD0D5DD"/></right><top style="thin"><color rgb="FFD0D5DD"/></top><bottom style="thin"><color rgb="FFD0D5DD"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+function sheetXml(rows,o){
+  const w=o.w||[],cs=o.cs||[];
+  const data=rows.map((r,ri)=>`<row r="${ri+1}"${ri===0&&o.hdr?' ht="32" customHeight="1"':''}>${r.map((v,ci)=>{const ref=colL(ci)+(ri+1),st=ri===0&&o.hdr?1:(cs[ci]!=null?cs[ci]:0);return typeof v==='number'?`<c r="${ref}" s="${st}"><v>${v}</v></c>`:(v===''||v==null)?`<c r="${ref}" s="${st}"/>`:`<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`}).join('')}</row>`).join('');
+  return XH+`<worksheet ${XNS}><sheetViews><sheetView workbookViewId="0">${o.hdr?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':''}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${w.length?`<cols>${w.map((x,i)=>`<col min="${i+1}" max="${i+1}" width="${x}" customWidth="1"/>`).join('')}</cols>`:''}<sheetData>${data}</sheetData>${o.dv||''}<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`;
+}
+function makeXlsx(sheets){
+  const F=[],add=(n,t)=>F.push({name:n,data:te.encode(t)}),RN='xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  add('[Content_Types].xml',XH+`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((x,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`);
+  add('_rels/.rels',XH+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  add('xl/workbook.xml',XH+`<workbook ${XNS} ${RN}><sheets>${sheets.map((x,i)=>`<sheet name="${x.name}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`);
+  add('xl/_rels/workbook.xml.rels',XH+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((x,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  add('xl/styles.xml',XSTYLES);
+  sheets.forEach((x,i)=>add(`xl/worksheets/sheet${i+1}.xml`,sheetXml(x.rows,x.o)));
+  return zipStore(F);
+}
+function productBook(rows,hdr){
+  const cats=catSorted(),n=cats.length;
+  const dv=`<dataValidations count="${n?2:1}">${n?`<dataValidation type="list" allowBlank="1" sqref="D2:D5000"><formula1>DanhMuc!$A$2:$A$${n+1}</formula1></dataValidation>`:''}<dataValidation type="list" allowBlank="1" sqref="G2:G5000"><formula1>"${UNITS.join(',')}"</formula1></dataValidation></dataValidations>`;
+  const help=[['HƯỚNG DẪN NHẬP SẢN PHẨM TỪ EXCEL'],[''],['1. Điền dữ liệu ở sheet "SanPham", mỗi dòng một sản phẩm. Giữ dòng tiêu đề (được đổi thứ tự cột hoặc bỏ bớt cột không dùng).'],['2. Với sản phẩm mới, chỉ bắt buộc cột Tên sản phẩm. Các cột khác có thể để trống.'],['3. SKU đã có trong phần mềm thì dòng đó CẬP NHẬT sản phẩm (chỉ ghi đè các ô có dữ liệu). SKU chưa có thì thêm mới. Dòng không có SKU: khớp theo Barcode hoặc theo đúng tên sản phẩm, không khớp thì thêm mới.'],['4. Danh mục ghi dạng cha > con, ví dụ: Gạch men > Gạch lát nền (tối đa 3 cấp). Danh mục chưa có sẽ được tự tạo.'],['5. Thuộc tính ghi dạng Tên=Giá trị, cách nhau bằng dấu chấm phẩy. Ví dụ: Kích thước=60x60; Màu sắc=Kem.'],['6. Quy đổi đơn vị: mỗi đơn vị bằng bao nhiêu đơn vị liền trước. Ví dụ hộp=1.44; thùng=6 nghĩa là 1 hộp = 1,44 đơn vị cơ sở và 1 thùng = 6 hộp.'],['7. Tồn đầu kỳ chỉ áp dụng cho sản phẩm mới. Muốn đổi tồn của sản phẩm đã có hãy dùng Nhập hàng, Điều chỉnh hoặc Kiểm kê.'],['8. Giá ghi bằng số. Giữ cột SKU và Barcode ở dạng văn bản để không mất số 0 ở đầu.'],[''],['Thuộc tính đang có trong phần mềm:'],...db.attrs.map(a=>[a.name+(a.cat?' (áp dụng cho '+a.cat+')':'')+(a.values.length?': '+a.values.join(', '):'')])];
+  return makeXlsx([{name:'SanPham',rows:[hdr||CSVH,...rows],o:{hdr:1,w:[14,16,34,28,16,16,10,14,13,13,13,12,12,44,26],cs:[2,2,0,0,0,0,0,0,3,3,3,0,0,0,0],dv}},{name:'HuongDan',rows:help,o:{w:[130]}},{name:'DanhMuc',rows:[['Danh mục hiện có'],...cats.map(c=>[c])],o:{hdr:1,w:[44]}}]);
+}
 function csvTpl(){
-  const rows=[CSVH,['GN6001','8930000000011','Gạch lát nền bóng kiếng','Gạch men > Gạch lát nền','Viglacera','','m²','','140000','185000','170000','50','300','Kích thước=60x60; Màu sắc=Kem; Bề mặt=Bóng kiếng','hộp=1.44; thùng=6'],['KD25','','Keo dán gạch','Vật tư phụ','Weber','Bao 25kg','bao','','145000','185000','172000','10','80','','']];
-  dl('mau-nhap-san-pham.csv','\uFEFF'+rows.map(r=>r.map(c=>'"'+c+'"').join(',')).join('\r\n'),'text/csv');
+  dl('mau-nhap-san-pham.xlsx',productBook([['GN6001','8930000000011','Gạch lát nền bóng kiếng','Gạch men > Gạch lát nền','Viglacera','','m²','',140000,185000,170000,50,300,'Kích thước=60x60; Màu sắc=Kem; Bề mặt=Bóng kiếng','hộp=1.44; thùng=6'],['KD25','','Keo dán gạch','Vật tư phụ','Weber','Bao 25kg','bao','',145000,185000,172000,10,80,'','']]),XMIME);
+}
+function exportXlsx(){
+  const at=o=>Object.entries(o||{}).map(([id,v])=>((db.attrs.find(a=>a.id===id)||{name:id}).name)+'='+v).join('; ');
+  const rows=db.products.map(p=>[p.code||'',p.barcode||'',p.name,p.cat||'',p.brand||'',p.spec||'',p.unit,'',p.cost||0,p.price||0,p.wprice||0,p.min||0,rd(p.stock),at(p.attrs),(p.units||[]).map(u=>u.name+'='+u.per).join('; ')]);
+  const h=CSVH.slice();h[12]='Tồn hiện tại (không đổi khi nhập lại)';
+  dl('danh-sach-san-pham-'+stamp()+'.xlsx',productBook(rows,h),XMIME);toast('Đã xuất '+rows.length+' sản phẩm. Sửa trong Excel rồi dùng "Nhập từ file Excel" để cập nhật theo SKU.');
+}
+async function inflateRaw(u8){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
+async function unzip(buf){
+  const u=new Uint8Array(buf),dv=new DataView(buf);let e=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-65557);i--){if(dv.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error('File không phải định dạng .xlsx hợp lệ.');
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const out={};
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    const meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true),name=td.decode(u.subarray(p+46,p+46+nl));
+    if(/^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/[^/]+\.xml)$/.test(name)){
+      const ds=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),raw=u.subarray(ds,ds+csz);
+      out[name]=td.decode(meth===0?raw:await inflateRaw(raw));
+    }
+    p+=46+nl+el+cl;
+  }
+  return out;
+}
+async function readXlsx(buf){
+  if(typeof DecompressionStream==='undefined')throw new Error('Trình duyệt này chưa hỗ trợ đọc file .xlsx. Hãy cập nhật Chrome hoặc Edge, hoặc lưu file Excel thành CSV UTF-8 rồi nhập lại.');
+  const z=await unzip(buf),P=x=>new DOMParser().parseFromString(x,'application/xml');
+  if(!z['xl/workbook.xml'])throw new Error('File không phải định dạng .xlsx hợp lệ.');
+  const wb=P(z['xl/workbook.xml']),sh=[...wb.getElementsByTagName('sheet')];
+  if(!sh.length)throw new Error('File không có bảng tính nào.');
+  const rid=sh[0].getAttribute('r:id'),rel=z['xl/_rels/workbook.xml.rels']?[...P(z['xl/_rels/workbook.xml.rels']).getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid):null;
+  const tg=rel?'xl/'+rel.getAttribute('Target').replace(/^\//,'').replace(/^xl\//,''):'xl/worksheets/sheet1.xml',sx=z[tg]||z['xl/worksheets/sheet1.xml'];
+  if(!sx)throw new Error('Không đọc được bảng tính đầu tiên.');
+  const ss=z['xl/sharedStrings.xml']?[...P(z['xl/sharedStrings.xml']).getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].filter(t=>t.parentNode.nodeName!=='rPh').map(t=>t.textContent).join('')):[];
+  const rows=[],rn=[];
+  [...P(sx).getElementsByTagName('row')].forEach(r=>{
+    const arr=[];
+    [...r.getElementsByTagName('c')].forEach(c=>{
+      const m=/^([A-Z]+)/.exec(c.getAttribute('r')||'');if(!m)return;
+      let ci=0;for(const ch of m[1])ci=ci*26+ch.charCodeAt(0)-64;ci--;
+      const t=c.getAttribute('t'),vEl=c.getElementsByTagName('v')[0],v=vEl?vEl.textContent:'';let val='';
+      if(t==='s')val=ss[+v]||'';else if(t==='inlineStr')val=[...c.getElementsByTagName('t')].map(x=>x.textContent).join('');
+      else if(t==='str')val=v;else if(t==='b')val=v==='1'?'1':'';else if(t==='e')val='';
+      else if(v!==''){const n=parseFloat(v);val=isNaN(n)?v:n}
+      arr[ci]=val;
+    });
+    for(let i=0;i<arr.length;i++)if(arr[i]===undefined)arr[i]='';
+    if(arr.some(x=>String(x).trim()!=='')){rows.push(arr);rn.push(+r.getAttribute('r')||rows.length)}
+  });
+  rows.rn=rn;return rows;
 }
 function parseCSV(t){
   t=t.replace(/^\uFEFF/,'');const f=t.split(/\r?\n/)[0],dm=(f.match(/;/g)||[]).length>(f.match(/,/g)||[]).length?';':',',rows=[];let r=[],c='',q=false;
@@ -608,16 +696,27 @@ function parseCSV(t){
     else if(ch==='"')q=true;else if(ch===dm){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;end()}else c+=ch}
   if(c||r.length)end();return rows;
 }
-function csvRead(text){
-  let rows=parseCSV(text);if(rows.length&&/^(sku|ma)/.test(nz(rows[0][0])))rows=rows.slice(1);
-  const num=v=>+String(v||'').replace(/[^\d]/g,'')||0,dec=v=>parseFloat(String(v||'').replace(',','.'))||0,seen={},out=[],err=[];
-  rows.forEach((r,i)=>{
-    const [code,barcode,name,cat2,brand,spec,unit,box,cost,price,wprice,min,stock,atx,utx]=r.map(x=>(x||'').trim()),ln=i+2;
+const HM=[['barcode',/^(barcode|ma vach)/],['code',/^(sku|ma hang|ma sp|ma san pham|code)/],['name',/^(ten san pham|ten hang|ten)( |$)/],['cat',/^(danh muc|nhom)/],['brand',/^(thuong hieu|nha san xuat|hang$)/],['spec',/^quy cach/],['unit',/^(dvt|don vi)/],['box',/^so dvt/],['cost',/^(gia von|gia nhap)/],['price',/^(gia ban le|gia ban|gia le)/],['wprice',/^(gia tho|gia si)/],['min',/^ton (toi thieu|min)/],['stock',/^ton/],['atx',/^thuoc tinh/],['utx',/^quy doi/]];
+const FIELDS=['code','barcode','name','cat','brand','spec','unit','box','cost','price','wprice','min','stock','atx','utx'];
+function csvRead(text){importRows(parseCSV(text))}
+function importRows(rows){
+  if(!rows.length)return alert('File không có dữ liệu.');
+  const hdr=rows[0].map(h=>nz(h).replace(/\*/g,'').trim()),map={};
+  hdr.forEach((h,i)=>{for(const[f,re] of HM){if(re.test(h)){if(map[f]===undefined)map[f]=i;break}}});
+  const named=Object.keys(map).length>=3;
+  if(named&&map.name===undefined&&map.code===undefined)return alert('Không tìm thấy cột "Tên sản phẩm" hoặc "SKU" ở dòng đầu tiên của file.');
+  const body=named?rows.slice(1):rows,col=f=>named?(map[f]===undefined?-1:map[f]):FIELDS.indexOf(f),cell=(r,f)=>{const i=col(f);return i>=0&&r[i]!=null?r[i]:''};
+  const T=(r,f)=>{const v=cell(r,f);return typeof v==='number'?String(v):String(v).trim()},N=(r,f)=>{const v=cell(r,f);return typeof v==='number'?Math.round(v):(+String(v).replace(/[^\d]/g,'')||0)},D=(r,f)=>{const v=cell(r,f);return typeof v==='number'?v:(parseFloat(String(v).replace(',','.'))||0)};
+  const seen={},out=[],err=[];
+  body.forEach((r,i)=>{
+    const ln=rows.rn?rows.rn[i+(named?1:0)]:i+(named?2:1);if(!r.some(x=>String(x==null?'':x).trim()!==''))return;
+    const code=T(r,'code'),name=T(r,'name');
     if(code&&seen[code.toLowerCase()]){err.push(`Dòng ${ln}: trùng SKU ${code} trong file`);return}
     if(code)seen[code.toLowerCase()]=1;
-    const ex=code&&db.products.find(p=>(p.code||'').toLowerCase()===code.toLowerCase());
+    const bc=T(r,'barcode');let ex=code?db.products.find(p=>(p.code||'').toLowerCase()===code.toLowerCase()):null;
+    if(!ex&&!code){if(bc)ex=db.products.find(p=>p.barcode&&String(p.barcode)===bc);else if(name){const m=db.products.filter(p=>nz(p.name)===nz(name));if(m.length===1)ex=m[0]}} /* không có SKU: khớp theo barcode hoặc đúng tên */
     if(!name&&!ex){err.push(`Dòng ${ln}: thiếu tên sản phẩm (chỉ được bỏ trống tên khi SKU đã có để cập nhật)`);return}
-    out.push({ex:ex?ex.id:'',d:{code,barcode,name,cat:cat2,brand,spec,unit,box:dec(box),cost:num(cost),price:num(price),wprice:num(wprice),min:dec(min)},stock:dec(stock),at:kv(atx),us:kv(utx).map(([n,v])=>({name:n,per:dec(v)})).filter(u=>u.per>0)});
+    out.push({ex:ex?ex.id:'',d:{code,barcode:T(r,'barcode'),name,cat:T(r,'cat'),brand:T(r,'brand'),spec:T(r,'spec'),unit:T(r,'unit'),box:D(r,'box'),cost:N(r,'cost'),price:N(r,'price'),wprice:N(r,'wprice'),min:D(r,'min')},stock:D(r,'stock'),at:kv(T(r,'atx')),us:kv(T(r,'utx')).map(([n,v])=>({name:n,per:parseFloat(v.replace(',','.'))||0})).filter(u=>u.per>0)});
   });
   ipv={out,err};products();
 }
@@ -1191,6 +1290,7 @@ document.addEventListener('click',e=>{
   else if('cardx' in d){card=null;kLG()}
   else if(d.pstat){const x=prod(d.pstat);x.status=x.status==='off'?'on':'off';save();drawPL()}
   else if('csvtpl' in d)csvTpl();
+  else if('xlexp' in d)exportXlsx();
   else if('csvimp' in d)$('#fcsv').click();
   else if('ipgo' in d)csvGo();
   else if('ipx' in d){ipv=null;products()}
@@ -1236,7 +1336,14 @@ $('#file').onchange=e=>{
     catch(x){alert('File sao lưu không hợp lệ.')}};
   r.readAsText(f);e.target.value='';
 };
-$('#fcsv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>csvRead(r.result);r.readAsText(f,'UTF-8');e.target.value=''};
+$('#fcsv').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const buf=await f.arrayBuffer(),u=new Uint8Array(buf);
+    if(u[0]===0x50&&u[1]===0x4B)importRows(await readXlsx(buf));
+    else if(u[0]===0xD0&&u[1]===0xCF)alert('File .xls (Excel đời cũ) chưa được hỗ trợ. Hãy mở bằng Excel, chọn Lưu thành (Save As) định dạng .xlsx rồi nhập lại.');
+    else csvRead(td.decode(u));
+  }catch(err){alert(err.message||'Không đọc được file.')}
+};
 boot();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});

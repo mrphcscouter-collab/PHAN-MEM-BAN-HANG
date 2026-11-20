@@ -3045,7 +3045,10 @@ const imgFit=f=>new Promise((ok,no)=>{const url=URL.createObjectURL(f),im=new Im
       for(const q of [.6,.5,.4,.3]){out=c.toDataURL('image/webp',q);if(out.indexOf('data:image/webp')!==0)out=c.toDataURL('image/jpeg',q);if(out.length*.75<=12000)return ok(out)}}
     ok(out)};
   im.onerror=()=>{URL.revokeObjectURL(url);no(new Error('Không đọc được file ảnh này.'))};im.src=url});
-const th=(id,z)=>IMG[id]?`<img class="th" src="${IMG[id]}" ${z===false?'':`data-zoom="${id}"`} alt="" loading="lazy">`:'';
+const ik=p=>p.im==='-'?null:(p.im||p.id),imgKey=id=>{const p=prod(id);return p?ik(p):id};
+const sharers=p=>{const k=ik(p);return k?db.products.filter(x=>x.id!==p.id&&ik(x)===k).length:0};
+function imgGc(){const used=new Set(db.products.map(ik).filter(Boolean));Object.keys(IMG).forEach(k=>{if(!used.has(k))imgDel(k)})}
+const th=(id,z)=>{const k=imgKey(id);return k&&IMG[k]?`<img class="th" src="${IMG[k]}" ${z===false?'':`data-zoom="${id}"`} alt="" loading="lazy">`:''};
 
 /* ---- Quét mã bằng camera ---- */
 let scX=null;
@@ -3116,28 +3119,59 @@ function labelPrint(){
 .lbr{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.sbtn{flex:none;margin:0!important;min-height:40px;padding:0 14px!important}`;document.head.appendChild(s)}
 /* nhãn nhỏ cho ô kết quả tìm kiếm: gói tên + ảnh */
 {const _sr=showRes;showRes=function(){_sr();document.querySelectorAll('#res .ri[data-r]').forEach(r=>{const id=r.dataset.r,d=r.children[1];if(d&&!d.classList.contains('nmx')){d.classList.add('nmx');d.innerHTML=th(id,false)+'<div style="min-width:0">'+d.innerHTML+'</div>'}})}}
-{const _dl=drawLines;drawLines=function(){_dl();document.querySelectorAll('#lines .lt tr').forEach(tr=>{const e=tr.querySelector('[data-q]'),nm=tr.querySelector('.nm');if(!e||!nm||nm.querySelector('.th'))return;const L=O().lines.find(x=>lid(x)===e.dataset.q);if(L&&IMG[L.id])nm.insertAdjacentHTML('afterbegin',th(L.id))})}}
-{const _dp=drawPL;drawPL=function(){_dp();document.querySelectorAll('#plist .pc').forEach(c=>{const b=c.querySelector('[data-edit]'),r=c.querySelector('.ivr2');if(b&&r&&IMG[b.dataset.edit])r.insertAdjacentHTML('afterbegin',th(b.dataset.edit))})}}
+{const _dl=drawLines;drawLines=function(){_dl();document.querySelectorAll('#lines .lt tr').forEach(tr=>{const e=tr.querySelector('[data-q]'),nm=tr.querySelector('.nm');if(!e||!nm||nm.querySelector('.th'))return;const L=O().lines.find(x=>lid(x)===e.dataset.q);if(L&&IMG[imgKey(L.id)])nm.insertAdjacentHTML('afterbegin',th(L.id))})}}
+{const _dp=drawPL;drawPL=function(){_dp();document.querySelectorAll('#plist .pc').forEach(c=>{const b=c.querySelector('[data-edit]'),r=c.querySelector('.ivr2');if(b&&r&&IMG[imgKey(b.dataset.edit)])r.insertAdjacentHTML('afterbegin',th(b.dataset.edit))})}}
 {const _s=sell;sell=function(){_s();const sw=document.querySelector('.sb .sw');if(sw&&!$('#scbtn'))sw.insertAdjacentHTML('afterend','<button type="button" class="ghost sbtn" id="scbtn" data-scansell title="Quét mã bằng camera">📷 Quét</button>')}}
 {const _p=products;products=function(){_p();const b=document.querySelector('.pbar'),s=document.querySelector('.psb');if(b&&!b.querySelector('[data-lbl]'))b.insertAdjacentHTML('beforeend','<button class="ghost" data-lbl="">In tem</button>');if(s)s.insertAdjacentHTML('beforeend','<button type="button" class="ghost sbtn" data-scanfind title="Quét mã để tìm sản phẩm">📷</button>')}}
 {const _m=pMenu;pMenu=function(btn,id){_m(btn,id);const m=$('#pmenu'),d=m&&m.querySelector('.dg');if(m&&m.dataset.id===id&&d)d.insertAdjacentHTML('beforebegin',`<button data-lbl="${id}">In tem mã</button>`)}}
-{const _d=delProd;delProd=function(id){_d(id);if(!prod(id)&&IMG[id])imgDel(id)}}
-{const _o=openProdForm;openProdForm=function(){pImg=undefined;_o();const b=document.querySelector('.pfm .dbb');if(!b)return;const cur=editing?IMG[editing]:null;
-  b.insertAdjacentHTML('afterbegin',`<div class="pim"><div class="pv" id="pv">${cur?`<img src="${cur}">`:'Chưa có ảnh'}</div><div class="bt"><label class="ghost" style="border-radius:6px;border:1px solid var(--ac);font-weight:600">📷 Chụp / chọn ảnh<input type="file" id="pimf" accept="image/*" hidden></label><button type="button" class="ghost danger" data-pimdel ${cur?'':'hidden'}>Xóa ảnh</button><small id="pimi">${cur?'Ảnh hiện tại ~'+imgKB(cur)+' KB':'Ảnh tự thu nhỏ còn khoảng 10 KB, đủ để đối chiếu hàng thật.'}</small></div></div>`);
-  $('#pimf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const u=await imgFit(f);pImg=u;$('#pv').innerHTML=`<img src="${u}">`;$('#pimi').textContent='Ảnh mới ~'+imgKB(u)+' KB (lưu khi bấm Lưu)';document.querySelector('[data-pimdel]').hidden=false}catch(x){alert(x.message)}};
-  const bc=$('#pbc');if(bc)bc.closest('label').insertAdjacentHTML('beforeend','<div class="bcx"><button type="button" class="ghost" data-bcgen>Tự tạo mã</button><button type="button" class="ghost" data-bcscan>📷 Quét</button></div>')}}
-{const _sp=saveProd;saveProd=function(n){const eid=editing,before=db.products.length,pi=pImg;_sp(n);const ok=eid?editing!==eid:db.products.length>before;if(!ok||pi===undefined)return;
-  const p=eid?prod(eid):db.products[db.products.length-1];if(!p)return;pi?imgPut(p.id,pi):imgDel(p.id);if($('#plist'))drawPL()}}
+{const _d=delProd;delProd=function(id){_d(id);if(!prod(id))imgGc()}}
+let pShare,pAll=false;
+function pimDraw(){
+  const e=editing?prod(editing):null,pv=$('#pv');if(!pv)return;let u;
+  if(pImg)u=pImg;else if(pImg===null||pShare==='-')u=null;else if(pShare)u=IMG[pShare];else u=e?IMG[imgKey(e.id)]:null;
+  pv.innerHTML=u?`<img src="${u}">`:'Chưa có ảnh';
+  const n=e?sharers(e):0,sh=pShare&&pShare!=='-'?db.products.find(x=>ik(x)===pShare&&x!==e):null;let t;
+  if(pImg)t='Ảnh mới ~'+imgKB(pImg)+' KB (lưu khi bấm Lưu)';
+  else if(pImg===null||pShare==='-')t='Sản phẩm sẽ không có ảnh khi lưu';
+  else if(pShare)t='Dùng chung ảnh với "'+(sh?sh.name:'sản phẩm khác')+'", không tốn thêm dung lượng';
+  else if(u)t='Ảnh hiện tại ~'+imgKB(u)+' KB'+(n?'. Đang dùng chung với '+n+' sản phẩm khác':'');
+  else t='Ảnh tự thu nhỏ còn khoảng 10 KB. Nhiều sản phẩm giống nhau có thể dùng chung 1 ảnh.';
+  $('#pimi').textContent=t;document.querySelector('[data-pimdel]').hidden=!u;
+  const w=$('#pallw');if(w)w.hidden=!(e&&n>0&&pShare===undefined)}
+function ipkOpen(){const el=document.createElement('div');el.className='dbm ipk';
+  el.innerHTML=`<div class="dbs" role="dialog" style="max-width:520px"><div class="dbh"><div class="dbt1">Chọn sản phẩm có ảnh để dùng chung</div><button type="button" class="ghost pcl" data-ipkx>✕</button></div><div class="dbb"><input id="ipq" type="search" placeholder="Gõ tên hoặc mã sản phẩm…" autocomplete="off" style="margin-bottom:8px"><div id="ipl" style="max-height:50vh;overflow:auto"></div></div></div>`;
+  document.body.appendChild(el);const q=el.querySelector('#ipq');q.oninput=ipkList;ipkList();q.focus()}
+function ipkList(){const k=nz($('#ipq').value),seen=new Set(),L=[];
+  db.products.forEach(p=>{const key=ik(p);if(!key||!IMG[key]||(editing&&p.id===editing))return;if(k){if(!nz(ptext(p)).includes(k))return}else{if(seen.has(key))return;seen.add(key)}L.push(p)});
+  $('#ipl').innerHTML=L.slice(0,60).map(p=>`<div class="lbr" data-pickimg="${ik(p)}" style="cursor:pointer">${th(p.id,false)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><br><small>${esc(pcode(p))}${sharers(p)?' · '+(sharers(p)+1)+' sản phẩm dùng chung':''}</small></div></div>`).join('')||'<div class="empty">Chưa có sản phẩm nào có ảnh.</div>'}
+{const _o=openProdForm;openProdForm=function(){pImg=undefined;pShare=undefined;pAll=false;_o();const b=document.querySelector('.pfm .dbb');if(!b)return;
+  const e=editing?prod(editing):null,cs=!e&&cloneFrom?prod(cloneFrom):null;if(cs&&ik(cs)&&IMG[ik(cs)])pShare=ik(cs);
+  b.insertAdjacentHTML('afterbegin',`<div class="pim"><div class="pv" id="pv"></div><div class="bt"><label class="ghost" style="border-radius:6px;border:1px solid var(--ac);font-weight:600">📷 Chụp / chọn ảnh<input type="file" id="pimf" accept="image/*" hidden></label><button type="button" class="ghost" data-pimpick>🖼 Dùng ảnh của sản phẩm khác</button><button type="button" class="ghost danger" data-pimdel>Xóa ảnh</button><label id="pallw" class="chk" hidden style="margin:0;padding:0;min-height:0;font-size:13px;color:inherit;display:flex;gap:6px;align-items:center"><input type="checkbox" id="pall">Thay / xóa ảnh cho tất cả sản phẩm dùng chung</label><small id="pimi"></small></div></div>`);
+  $('#pimf').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;try{pImg=await imgFit(f);pShare=undefined;pimDraw()}catch(x){alert(x.message)}};
+  $('#pall').onchange=ev=>{pAll=ev.target.checked};
+  const bc=$('#pbc');if(bc)bc.closest('label').insertAdjacentHTML('beforeend','<div class="bcx"><button type="button" class="ghost" data-bcgen>Tự tạo mã</button><button type="button" class="ghost" data-bcscan>📷 Quét</button></div>');
+  pimDraw()}}
+{const _sp=saveProd;saveProd=function(n){const eid=editing,before=db.products.length,pi=pImg,ps=pShare,pa=pAll;_sp(n);const ok=eid?editing!==eid:db.products.length>before;if(!ok||(pi===undefined&&ps===undefined))return;
+  const p=eid?prod(eid):db.products[db.products.length-1];if(!p)return;const setIm=v=>{if(v)p.im=v;else if('im' in p)p.im=''};
+  if(ps!==undefined){if(!(ps==='-'&&!eid))setIm(ps==='-'?'-':(ps===p.id?'':ps))}
+  else{const k=ik(p),others=k?sharers(p):0;
+    if(typeof pi==='string'){if(k&&others&&!pa){const nk=uid();setIm(nk);imgPut(nk,pi)}else{if(p.im==='-')setIm('');imgPut(ik(p)||p.id,pi)}}
+    else if(pi===null){if(others&&!pa)setIm('-');else if(k)imgDel(k)}}
+  imgGc();save();if($('#plist'))drawPL();
+  if(document.querySelector('.pfm')&&!editing&&cloneFrom){const c2=prod(cloneFrom);if(c2&&ik(c2)&&IMG[ik(c2)]&&pImg===undefined){pShare=ik(c2);pimDraw()}} /* form sao chép tiếp theo đã mở trước khi ảnh kịp gắn */}}
 {const _v=setView;setView=function(){_v();const b=document.querySelector('[data-backup]'),n=Object.keys(IMG).length,kb=Object.values(IMG).reduce((a,u)=>a+u.length*.75/1024,0);
   if(b&&!document.querySelector('[data-bknoimg]'))b.insertAdjacentHTML('afterend','<button class="ghost" data-bknoimg>Sao lưu (không kèm ảnh)</button>');
   if(b)b.closest('.card').insertAdjacentHTML('beforeend',`<p><small>Ảnh sản phẩm: ${n} ảnh, khoảng ${Math.round(kb)} KB, lưu riêng trong trình duyệt của máy này. File sao lưu có kèm ảnh. ${gOn()?'Ảnh được đồng bộ qua Google Drive: mỗi ảnh là một file nhỏ khoảng 10 KB, máy chỉ tải những ảnh còn thiếu. Ảnh mới từ máy khác về trong tối đa 5 phút, hoặc ngay khi bấm Đồng bộ ngay.':'Chưa kết nối Google Drive nên ảnh chỉ nằm trên máy này.'}</small></p>`)}}
 document.addEventListener('click',e=>{const t=e.target;
-  if(t.closest('[data-zoom]')){const id=t.closest('[data-zoom]').dataset.zoom,p=prod(id);if(!IMG[id])return;const z=document.createElement('div');z.className='zm';z.innerHTML=`<img src="${IMG[id]}"><div>${esc(p?p.name:'')}</div><small>Bấm để đóng</small>`;z.onclick=()=>z.remove();document.body.appendChild(z);return}
+  if(t.closest('[data-zoom]')){const id=t.closest('[data-zoom]').dataset.zoom,p=prod(id);if(!IMG[imgKey(id)])return;const z=document.createElement('div');z.className='zm';z.innerHTML=`<img src="${IMG[imgKey(id)]}"><div>${esc(p?p.name:'')}</div><small>Bấm để đóng</small>`;z.onclick=()=>z.remove();document.body.appendChild(z);return}
   if(t.closest('[data-bknoimg]')){db.lastBackup=Date.now();save();dl(`sao-luu-khong-anh-${stamp()}.json`,JSON.stringify(db),'application/json');return}
   if(t.closest('[data-scx]'))return scanClose();
   if(t.closest('[data-scansell]'))return scanSell();
   if(t.closest('[data-scanfind]'))return scanOpen('Quét mã để tìm sản phẩm',raw=>{pSearch=raw;const i=$('#psr');if(i)i.value=raw;pLim=30;drawPL();const p=findCode(raw);return p?'Tìm thấy: '+p.name:'Không có sản phẩm mã: '+raw});
-  if(t.closest('[data-pimdel]')){pImg=null;$('#pv').textContent='Sẽ xóa ảnh khi lưu';t.closest('[data-pimdel]').hidden=true;return}
+  if(t.closest('[data-pimdel]')){if(editing){pImg=null;pShare=undefined}else{pImg=undefined;pShare='-'}pimDraw();return}
+  if(t.closest('[data-pimpick]'))return ipkOpen();
+  if(t.closest('[data-ipkx]')){const m=document.querySelector('.ipk');if(m)m.remove();return}
+  if(t.closest('[data-pickimg]')){pShare=t.closest('[data-pickimg]').dataset.pickimg;pImg=undefined;const m=document.querySelector('.ipk');if(m)m.remove();pimDraw();return}
   if(t.closest('[data-bcgen]')){const i=$('#pbc');if(i.value&&!confirm('Ô barcode đang có mã. Thay bằng mã mới tự tạo?'))return;i.value=genCode();return}
   if(t.closest('[data-bcscan]'))return scanOpen('Quét mã vạch của sản phẩm',raw=>{const o=findCode(raw);$('#pbc').value=raw;return o&&o.id!==editing?'Cảnh báo: mã này đang thuộc sản phẩm '+o.name:'Đã ghi mã: '+raw});
   if(t.closest('[data-lbl]')){const id=t.closest('[data-lbl]').dataset.lbl;labelDlg(id?[id]:[]);return}
@@ -3148,11 +3182,17 @@ document.addEventListener('click',e=>{const t=e.target;
 /* ---- Đồng bộ ảnh qua Google Drive: mỗi ảnh một file nhỏ bh_img_<mã sản phẩm> ---- */
 let imgBusy=false,imgMsg='';
 const IMGINT=5*60*1000,imgH=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)+s.length.toString(36)};
-const imgFile='bh_img_';
-async function imgList(){const out=[];let pt='';do{const q=encodeURIComponent(`name contains '${imgFile}' and trashed=false`),r=await gFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,appProperties)&pageSize=1000${pt?'&pageToken='+pt:''}`),j=await r.json();out.push(...(j.files||[]));pt=j.nextPageToken||''}while(pt);return out}
-async function imgUp(pid,u,fid,h){
+const imgFile='bh_img_',IMGDIR='BanHang_HinhAnh';
+async function imgList(){const out=[];let pt='';do{const q=encodeURIComponent(`name contains '${imgFile}' and trashed=false`),r=await gFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,appProperties,parents)&pageSize=1000${pt?'&pageToken='+pt:''}`),j=await r.json();out.push(...(j.files||[]));pt=j.nextPageToken||''}while(pt);return out}
+async function imgFolder(){ /* thư mục chứa ảnh; nhiều máy cùng tạo thì mọi máy chọn thư mục cũ nhất */
+  const q=encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+IMGDIR+"' and trashed=false");
+  const j=await (await gFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime&fields=files(id)&pageSize=10`)).json();
+  if(j.files&&j.files[0])return j.files[0].id;
+  const r=await gFetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:IMGDIR,mimeType:'application/vnd.google-apps.folder'})});
+  return (await r.json()).id}
+async function imgUp(pid,u,fid,h,par){
   const mime=u.slice(5,u.indexOf(';')),bin=atob(u.slice(u.indexOf(',')+1)),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-  const bd='bhimg'+uid(),meta=JSON.stringify({name:imgFile+pid,mimeType:mime,appProperties:{h}});
+  const bd='bhimg'+uid(),pn=(db.products.find(x=>ik(x)===pid)||{}).name||'',meta=JSON.stringify(Object.assign({name:imgFile+pid,mimeType:mime,description:pn,appProperties:{h}},fid?{}:{parents:[par]}));
   const body=new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`,arr,`\r\n--${bd}--`]);
   const r=await gFetch(`https://www.googleapis.com/upload/drive/v3/files${fid?'/'+fid:''}?uploadType=multipart&fields=id`,{method:fid?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body});
   return (await r.json()).id}
@@ -3166,26 +3206,27 @@ async function imgSync(o){
   if(!dirty&&!(o&&(o.manual||o.interactive))&&Date.now()-last<IMGINT)return;
   imgBusy=true;const seq=imgSeq;
   try{
-    const list=await imgList(),rem={},dups=[];
-    list.forEach(f=>{const p=f.name.slice(imgFile.length);if(!f.name.startsWith(imgFile)||!p)return;if(rem[p])dups.push(f.id);else rem[p]={id:f.id,h:(f.appProperties||{}).h}});
-    const meta=(await idbGet('imgmeta').catch(()=>null))||{},pids=new Set([...Object.keys(IMG),...Object.keys(rem),...Object.keys(meta)]);
+    const F=await imgFolder(),list=await imgList(),rem={},dups=[];
+    list.forEach(f=>{const p=f.name.slice(imgFile.length);if(!f.name.startsWith(imgFile)||!p)return;if(rem[p])dups.push(f.id);else rem[p]={id:f.id,h:(f.appProperties||{}).h,par:f.parents||[]}});
+    const used=new Set(db.products.map(ik).filter(Boolean)),meta=(await idbGet('imgmeta').catch(()=>null))||{},pids=new Set([...Object.keys(IMG),...Object.keys(rem),...Object.keys(meta)]);
     const pull=[],push=[],delR=[],delL=[];
     pids.forEach(p=>{const L=IMG[p],R=rem[p],M=meta[p];
-      if(L&&!prod(p)){delL.push(p);if(R)delR.push(p);return} /* sản phẩm đã bị xóa (kể cả từ máy cũ): dọn ảnh mồ côi */
+      if(L&&!used.has(p)){delL.push(p);if(R)delR.push(p);return} /* sản phẩm đã bị xóa (kể cả từ máy cũ): dọn ảnh mồ côi */
       if(L&&!R){M?delL.push(p):push.push(p)}
-      else if(!L&&R){M?delR.push(p):(prod(p)&&pull.push(p))}
+      else if(!L&&R){M?delR.push(p):(used.has(p)&&pull.push(p))}
       else if(L&&R){const lh=imgH(L);if(lh===R.h)meta[p]={h:lh,id:R.id};else if(M&&M.h===R.h)push.push(p);else if(M&&M.h===lh)pull.push(p);else pull.push(p)}
       else delete meta[p]});
-    const total=pull.length+push.length+delR.length+delL.length;let done=0;
+    const mvs=Object.keys(rem).filter(p=>!delR.includes(p)&&!(rem[p].par||[]).includes(F)),total=pull.length+push.length+delR.length+delL.length+mvs.length;let done=0;
     const step=()=>{done++;if(total>20&&done%5===0){imgMsg=`Đang đồng bộ ảnh ${done}/${total}…`;gUI()}};
     delL.forEach(p=>{imgDel0(p);delete meta[p]});
     await pool(pull,4,async p=>{const u=await imgDown(rem[p].id);imgSet0(p,u);meta[p]={h:rem[p].h||imgH(u),id:rem[p].id};step()});
-    await pool(push,4,async p=>{const u=IMG[p],h=imgH(u),id=await imgUp(p,u,rem[p]&&rem[p].id,h);meta[p]={h,id};step()});
+    await pool(push,4,async p=>{const u=IMG[p],h=imgH(u),id=await imgUp(p,u,rem[p]&&rem[p].id,h,F);meta[p]={h,id};step()});
     await pool(delR,4,async p=>{await gFetch(`https://www.googleapis.com/drive/v3/files/${rem[p].id}`,{method:'DELETE'});delete meta[p];step()});
+    await pool(mvs,4,async p=>{await gFetch(`https://www.googleapis.com/drive/v3/files/${rem[p].id}?addParents=${F}&removeParents=${rem[p].par.join(',')}&fields=id`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'});step()});
     await pool(dups,2,async id=>{await gFetch(`https://www.googleapis.com/drive/v3/files/${id}`,{method:'DELETE'})});
     await idbPut('imgmeta',meta).catch(()=>{});
     localStorage.setItem('bh_ilast',String(Date.now()));if(seq===imgSeq)localStorage.setItem('bh_idirty','0');
-    imgMsg=total?`Ảnh: đã tải về ${pull.length}, đẩy lên ${push.length}.`:'';
+    imgMsg=total?`Ảnh: đã tải về ${pull.length}, đẩy lên ${push.length}${mvs.length?', gom '+mvs.length+' ảnh vào thư mục '+IMGDIR:''}.`:'';
     if(pull.length||delL.length){if(tab==='products'&&$('#plist')&&!document.querySelector('.pfm'))drawPL();if(tab==='sell'&&$('#lines'))drawLines()}
   }catch(e){imgMsg='Ảnh chưa đồng bộ được, sẽ thử lại.'}
   finally{imgBusy=false;gUI()}

@@ -648,7 +648,7 @@ function load(){
   try{const d=JSON.parse(localStorage.getItem(K));if(d&&d.products)return d}catch(e){}
   return{shop:'Cửa hàng vật liệu xây dựng',seq:1,invoices:[],products:seed(),cats:DEFCATS.slice()};
 }
-const idbOpen=()=>new Promise((ok,no)=>{const r=indexedDB.open('ban_hang_db',2);r.onupgradeneeded=()=>{['kv','img'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n)})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const idbOpen=()=>new Promise((ok,no)=>{const r=indexedDB.open('ban_hang_db');r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv')};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
 const idbGet=k=>new Promise((ok,no)=>{const r=idb.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
 function save(){gDirty();
   if(!idb){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){alert('Không lưu được dữ liệu. Hãy mở file bằng Chrome hoặc Edge.')}return}
@@ -2482,7 +2482,7 @@ function resetAll(){
   if(w===null)return;
   if(w.trim()!=='XOA HET')return alert('Nội dung gõ không đúng nên chưa xóa gì. Dữ liệu vẫn được giữ nguyên.');
   try{dl('sao-luu-truoc-khi-xoa-'+stamp()+'.json',JSON.stringify(Object.assign({},db,{_img:IMG})),'application/json')}catch(e){} /* tự tải bản sao lưu cuối cùng */
-  db=blankDb();norm();try{idb.transaction('img','readwrite').objectStore('img').clear()}catch(e){}
+  db=blankDb();norm();try{idb.transaction('kv','readwrite').objectStore('kv').delete(IRG())}catch(e){}
   try{localStorage.removeItem(K);localStorage.removeItem(K+'_v1_backup')}catch(e){}
   const done=()=>location.reload();
   if(idb){const tx=idb.transaction('kv','readwrite');tx.objectStore('kv').put(db,'db');tx.oncomplete=done;tx.onerror=done}
@@ -3012,13 +3012,31 @@ const findCode=s=>{const k=asc(s).trim().toLowerCase();if(!k)return null;return 
 /* ---- Ảnh sản phẩm: nén nhỏ nhất có thể, lưu riêng khỏi dữ liệu chính ---- */
 let IMG={},pImg;
 const idbReq=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
-async function imgLoad(){try{const s=idb.transaction('img').objectStore('img'),[k,v]=await Promise.all([idbReq(s.getAllKeys()),idbReq(s.getAll())]);k.forEach((id,i)=>IMG[id]=v[i])}catch(e){}}
+const IRG=()=>IDBKeyRange.bound('img:','img:\uffff');
+async function idbFix(){ /* máy đã dùng bản trước (DB v2): đưa về v1 để quay lại phần mềm cũ không lỗi */
+  if(idb.version<=1)return;
+  const rd=async n=>{if(!idb.objectStoreNames.contains(n))return[[],[]];const s=idb.transaction(n).objectStore(n);return[await idbReq(s.getAllKeys()),await idbReq(s.getAll())]};
+  const [kk,kv]=await rd('kv'),[ik,iv]=await rd('img');
+  const open=(name,ver,up)=>new Promise((ok,no)=>{const r=ver?indexedDB.open(name,ver):indexedDB.open(name);r.onupgradeneeded=()=>up&&up(r.result);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+  const put=async(d,pairs)=>{const tx=d.transaction('kv','readwrite'),s=tx.objectStore('kv');pairs.forEach(([k,v])=>s.put(v,k));await new Promise((ok,no)=>{tx.oncomplete=ok;tx.onerror=()=>no(tx.error)})};
+  const all=[...kk.map((k,i)=>[k,kv[i]]),...ik.map((k,i)=>['img:'+k,iv[i]])];
+  const dropDb=n=>new Promise(ok=>{const r=indexedDB.deleteDatabase(n);r.onsuccess=ok;r.onerror=ok;r.onblocked=()=>ok('blocked')});
+  await dropDb('ban_hang_tmp');const tmp=await open('ban_hang_tmp',1,d=>d.createObjectStore('kv'));await put(tmp,all);
+  if((await idbReq(tmp.transaction('kv').objectStore('kv').getAllKeys())).length!==all.length){tmp.close();throw new Error('copy')}
+  const old=idb;old.close();
+  if(await dropDb('ban_hang_db')==='blocked'){idb=await open('ban_hang_db');tmp.close();return}
+  const nu=await open('ban_hang_db',1,d=>d.createObjectStore('kv'));await put(nu,all);
+  if((await idbReq(nu.transaction('kv').objectStore('kv').getAllKeys())).length===all.length){idb=nu;tmp.close();await dropDb('ban_hang_tmp')}
+  else{idb=nu;tmp.close()}
+}
+async function imgLoad(){try{await idbFix()}catch(e){try{if(!idb||idb.version===undefined)idb=await idbOpen()}catch(x){}}
+  try{const s=idb.transaction('kv').objectStore('kv'),[k,v]=await Promise.all([idbReq(s.getAllKeys(IRG())),idbReq(s.getAll(IRG()))]);k.forEach((id,i)=>IMG[id.slice(4)]=v[i])}catch(e){}}
 let imgSeq=0;const imgMark=()=>{imgSeq++;try{localStorage.setItem('bh_idirty','1')}catch(e){}};
-function imgSet0(id,u){IMG[id]=u;try{idb.transaction('img','readwrite').objectStore('img').put(u,id)}catch(e){}}
-function imgDel0(id){delete IMG[id];try{idb.transaction('img','readwrite').objectStore('img').delete(id)}catch(e){}}
+function imgSet0(id,u){IMG[id]=u;try{idb.transaction('kv','readwrite').objectStore('kv').put(u,'img:'+id)}catch(e){}}
+function imgDel0(id){delete IMG[id];try{idb.transaction('kv','readwrite').objectStore('kv').delete('img:'+id)}catch(e){}}
 function imgPut(id,u){imgSet0(id,u);imgMark()}
 function imgDel(id){imgDel0(id);imgMark()}
-function imgReplace(m){imgMark();IMG={};try{const s=idb.transaction('img','readwrite').objectStore('img');s.clear();Object.keys(m||{}).forEach(id=>{IMG[id]=m[id];s.put(m[id],id)})}catch(e){}}
+function imgReplace(m){imgMark();IMG={};try{const s=idb.transaction('kv','readwrite').objectStore('kv');s.delete(IRG());Object.keys(m||{}).forEach(id=>{IMG[id]=m[id];s.put(m[id],'img:'+id)})}catch(e){}}
 const bkJson=async()=>JSON.stringify(Object.assign({},db,{_img:IMG}));
 const imgKB=u=>Math.max(1,Math.round(u.length*.75/1024));
 const imgFit=f=>new Promise((ok,no)=>{const url=URL.createObjectURL(f),im=new Image();
@@ -3111,9 +3129,11 @@ function labelPrint(){
 {const _sp=saveProd;saveProd=function(n){const eid=editing,before=db.products.length,pi=pImg;_sp(n);const ok=eid?editing!==eid:db.products.length>before;if(!ok||pi===undefined)return;
   const p=eid?prod(eid):db.products[db.products.length-1];if(!p)return;pi?imgPut(p.id,pi):imgDel(p.id);if($('#plist'))drawPL()}}
 {const _v=setView;setView=function(){_v();const b=document.querySelector('[data-backup]'),n=Object.keys(IMG).length,kb=Object.values(IMG).reduce((a,u)=>a+u.length*.75/1024,0);
+  if(b&&!document.querySelector('[data-bknoimg]'))b.insertAdjacentHTML('afterend','<button class="ghost" data-bknoimg>Sao lưu (không kèm ảnh)</button>');
   if(b)b.closest('.card').insertAdjacentHTML('beforeend',`<p><small>Ảnh sản phẩm: ${n} ảnh, khoảng ${Math.round(kb)} KB, lưu riêng trong trình duyệt của máy này. File sao lưu có kèm ảnh. ${gOn()?'Ảnh được đồng bộ qua Google Drive: mỗi ảnh là một file nhỏ khoảng 10 KB, máy chỉ tải những ảnh còn thiếu. Ảnh mới từ máy khác về trong tối đa 5 phút, hoặc ngay khi bấm Đồng bộ ngay.':'Chưa kết nối Google Drive nên ảnh chỉ nằm trên máy này.'}</small></p>`)}}
 document.addEventListener('click',e=>{const t=e.target;
   if(t.closest('[data-zoom]')){const id=t.closest('[data-zoom]').dataset.zoom,p=prod(id);if(!IMG[id])return;const z=document.createElement('div');z.className='zm';z.innerHTML=`<img src="${IMG[id]}"><div>${esc(p?p.name:'')}</div><small>Bấm để đóng</small>`;z.onclick=()=>z.remove();document.body.appendChild(z);return}
+  if(t.closest('[data-bknoimg]')){db.lastBackup=Date.now();save();dl(`sao-luu-khong-anh-${stamp()}.json`,JSON.stringify(db),'application/json');return}
   if(t.closest('[data-scx]'))return scanClose();
   if(t.closest('[data-scansell]'))return scanSell();
   if(t.closest('[data-scanfind]'))return scanOpen('Quét mã để tìm sản phẩm',raw=>{pSearch=raw;const i=$('#psr');if(i)i.value=raw;pLim=30;drawPL();const p=findCode(raw);return p?'Tìm thấy: '+p.name:'Không có sản phẩm mã: '+raw});
@@ -3151,6 +3171,7 @@ async function imgSync(o){
     const meta=(await idbGet('imgmeta').catch(()=>null))||{},pids=new Set([...Object.keys(IMG),...Object.keys(rem),...Object.keys(meta)]);
     const pull=[],push=[],delR=[],delL=[];
     pids.forEach(p=>{const L=IMG[p],R=rem[p],M=meta[p];
+      if(L&&!prod(p)){delL.push(p);if(R)delR.push(p);return} /* sản phẩm đã bị xóa (kể cả từ máy cũ): dọn ảnh mồ côi */
       if(L&&!R){M?delL.push(p):push.push(p)}
       else if(!L&&R){M?delR.push(p):(prod(p)&&pull.push(p))}
       else if(L&&R){const lh=imgH(L);if(lh===R.h)meta[p]={h:lh,id:R.id};else if(M&&M.h===R.h)push.push(p);else if(M&&M.h===lh)pull.push(p);else pull.push(p)}

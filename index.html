@@ -19,9 +19,9 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;
 button.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
 button.dz{color:var(--red)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
-input,select,textarea{font:inherit;width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);min-height:42px}
+input,select,textarea{font:inherit;font-size:16px;width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);min-height:42px}
 label{display:block;font-size:13px;color:var(--mute);margin-bottom:10px}
-label input,label select,label textarea{margin-top:3px;color:var(--ink);font-size:15px}
+label input,label select,label textarea{margin-top:3px;color:var(--ink);font-size:16px}
 header{position:sticky;top:0;z-index:20;background:var(--acd);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top))}
 header h1{font-size:17px;margin:0;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header button{min-height:34px;padding:4px 11px;font-size:13px;border-radius:17px;background:transparent;color:#d5e3ea;border-color:#4d7387;white-space:nowrap}
@@ -31,11 +31,12 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:#f
 nav button{flex:1;border:0;border-radius:0;background:none;color:var(--mute);padding:9px 2px;font-size:12.5px;min-height:58px;display:flex;flex-direction:column;align-items:center;gap:1px}
 nav button b{font-size:20px;line-height:1.1}nav button.on{color:var(--ac);font-weight:700;box-shadow:inset 0 3px 0 var(--ac)}
 .bar{display:flex;gap:8px;margin-bottom:8px}.bar input{flex:1}
-.flt{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.flt select{padding:8px 6px;font-size:13.5px;min-height:38px}
+.flt{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.flt select{padding:8px 6px;font-size:16px;min-height:40px}
 .cnt{font-size:13px;color:var(--mute);margin:2px 2px 6px}
 /* tường gạch: các ô ngăn cách bằng mạch vữa */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:3px;background:var(--grout);border:3px solid var(--grout)}
-.tc{background:#fff;cursor:pointer;display:flex;flex-direction:column;min-width:0}
+.tc{background:#fff;cursor:pointer;display:flex;flex-direction:column;min-width:0;content-visibility:auto;contain-intrinsic-size:auto 230px}
+button,.tc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .im{aspect-ratio:1;background:#eef0f1;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;overflow:hidden}
 .im img{width:100%;height:100%;object-fit:cover;display:block}
 .tc .tx{padding:7px 9px 9px}.tc b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -95,12 +96,14 @@ function toast(m){const e=document.createElement('div');e.className='toast';e.te
 /* ===== Dữ liệu ===== */
 const newDb=()=>({v:1,tiles:[],quotes:[],s:{shop:'Cửa hàng gạch men',mk:25,waste:5,bm:{},qrBase:'',pin:'',u:0}});
 function normDb(d){d=d&&typeof d==='object'?d:{};const s=Object.assign(newDb().s,d.s||{});s.bm=s.bm||{};return{v:1,tiles:Array.isArray(d.tiles)?d.tiles:[],quotes:Array.isArray(d.quotes)?d.quotes:[],s}}
-let db=newDb(),IMG={},idb=null,booting=true,tab='home';
+let db=newDb(),TH={},IHL={},idb=null,booting=true,tab='home';
 const rq=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
 const kv=m=>idb.transaction('kv',m).objectStore('kv');
 const idbO=()=>new Promise((ok,no)=>{const r=indexedDB.open('gachmen',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
 const idbG=k=>rq(kv('readonly').get(k)),idbP=(k,v)=>rq(kv('readwrite').put(v,k)),idbD=k=>rq(kv('readwrite').delete(k));
-function save(mark=true){try{idb?idbP('db',db):LS('gm_db',JSON.stringify(db))}catch(e){}if(mark)gDirty()}
+let svT;function persist(){clearTimeout(svT);try{idb?idbP('db',db):LS('gm_db',JSON.stringify(db))}catch(e){}}
+function save(mark=true){clearTimeout(svT);svT=setTimeout(persist,250);if(mark)gDirty()}
+addEventListener('pagehide',persist);document.addEventListener('visibilitychange',()=>{if(document.hidden)persist()});
 const live=()=>db.tiles.filter(t=>!t.del);
 const tile=id=>db.tiles.find(t=>t.id===id&&!t.del);
 const sig=d=>d.tiles.map(t=>t.id+':'+(t.u||0)).sort().join()+'|'+d.quotes.map(t=>t.id+':'+(t.u||0)).sort().join()+'|'+(d.s.u||0);
@@ -137,8 +140,10 @@ function sheet(h){shut();const e=document.createElement('div');e.className='ov';
 function shut(){const e=$('#ov');if(e)e.remove();document.body.style.overflow='';const z=$('.zm');if(z)z.remove()}
 
 /* ===== Tra cứu ===== */
-let q='',fb='',fs='',fc='',fk='',so='new',lim=60;
-const imgTag=t=>IMG[t.id]?'<img src="'+IMG[t.id]+'" alt="" loading="lazy">':'Chưa có ảnh';
+let q='',fb='',fs='',fc='',fk='',so='new',lim=36;
+const imgTag=t=>TH[t.id]?'<img src="'+TH[t.id]+'" alt="" decoding="async">':(t.ih?'Đang tải ảnh…':'Chưa có ảnh');
+const XI=new Map(),tx=t=>{let e=XI.get(t.id);if(!e||e.u!==t.u){e={u:t.u,s:nz([t.code,t.name,t.brand,t.size,t.color,t.surface,KINDS[t.kind],t.note].join(' '))};XI.set(t.id,e)}return e.s};
+const full=id=>idbG('img:'+id).catch(()=>null);
 const uniq=f=>[...new Set(live().map(f).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi',{numeric:true}));
 const opts=(L,cur,all)=>'<option value="">'+all+'</option>'+L.map(x=>'<option'+(x===cur?' selected':'')+' value="'+esc(x)+'">'+esc(x)+'</option>').join('');
 function vHome(){
@@ -146,16 +151,16 @@ function vHome(){
   '<div class="flt"><select id="fb">'+opts(uniq(t=>t.brand),fb,'Mọi hãng')+'</select><select id="fs">'+opts(uniq(t=>t.size),fs,'Mọi cỡ')+'</select><select id="fc">'+opts(uniq(t=>t.color),fc,'Mọi màu')+'</select>'+
   '<select id="so">'+[['new','Mới nhất'],['pa','Giá thấp → cao'],['pd','Giá cao → thấp'],['code','Theo mã']].map(a=>'<option value="'+a[0]+'"'+(so===a[0]?' selected':'')+'>'+a[1]+'</option>').join('')+'</select></div>'+
   '<div class="cnt" id="cnt"></div><div class="grid" id="grid"></div><div id="more" style="text-align:center;margin:12px"></div><button class="pri fab" data-a="add">＋ Thêm mẫu</button>';
-  $('#q').oninput=e=>{q=e.target.value;lim=60;drawGrid()};
-  [['fb',v=>fb=v],['fs',v=>fs=v],['fc',v=>fc=v],['so',v=>so=v]].forEach(([i,f])=>$('#'+i).onchange=e=>{f(e.target.value);lim=60;drawGrid()});
+  let qT;$('#q').oninput=e=>{q=e.target.value;lim=36;clearTimeout(qT);qT=setTimeout(drawGrid,130)};
+  [['fb',v=>fb=v],['fs',v=>fs=v],['fc',v=>fc=v],['so',v=>so=v]].forEach(([i,f])=>$('#'+i).onchange=e=>{f(e.target.value);lim=36;drawGrid()});
   drawGrid()}
-function found(){const k=nz(q).split(/\s+/).filter(Boolean);let L=live().filter(t=>(!fb||t.brand===fb)&&(!fs||t.size===fs)&&(!fc||t.color===fc)&&(!k.length||(x=>k.every(w=>x.includes(w)))(nz([t.code,t.name,t.brand,t.size,t.color,t.surface,KINDS[t.kind],t.note].join(' ')))));
+function found(){const k=nz(q).split(/\s+/).filter(Boolean);let L=live().filter(t=>(!fb||t.brand===fb)&&(!fs||t.size===fs)&&(!fc||t.color===fc)&&(!k.length||(x=>k.every(w=>x.includes(w)))(tx(t))));
   const p=t=>perM2(t)||sp(t)||1e15;
   if(so==='pa')L.sort((a,b)=>p(a)-p(b));else if(so==='pd')L.sort((a,b)=>(sp(b)?p(b):0)-(sp(a)?p(a):0));else if(so==='code')L.sort((a,b)=>a.code.localeCompare(b.code,'vi',{numeric:true}));else L.sort((a,b)=>(b.c||0)-(a.c||0));return L}
 function drawGrid(){const g=$('#grid');if(!g)return;const L=found(),n=live().length;$('#cnt').textContent=n?L.length+' / '+n+' mẫu':'';
   g.style.display=L.length?'':'none';
   g.innerHTML=L.slice(0,lim).map(t=>'<div class="tc" data-a="open" data-v="'+t.id+'"><div class="im">'+imgTag(t)+'</div><div class="tx"><b>'+esc(t.code)+'</b><small>'+esc([t.size,t.color].filter(Boolean).join(' · '))+'</small><small>'+esc(t.brand)+'</small><div class="pp">'+priceLine(t)+'</div></div></div>').join('');
-  $('#more').innerHTML=!L.length?'<div class="empty">'+(n?'Không có mẫu phù hợp. Thử bỏ bớt bộ lọc.':'Chưa có mẫu gạch nào.<br>Bấm <b>＋ Thêm mẫu</b> để nhập mẫu đầu tiên, hoặc vào <b>Cài đặt</b> để dán cả bảng giá từ Excel.')+'</div>':L.length>lim?'<button data-a="more">Xem thêm '+Math.min(60,L.length-lim)+' mẫu</button>':''}
+  $('#more').innerHTML=!L.length?'<div class="empty">'+(n?'Không có mẫu phù hợp. Thử bỏ bớt bộ lọc.':'Chưa có mẫu gạch nào.<br>Bấm <b>＋ Thêm mẫu</b> để nhập mẫu đầu tiên, hoặc vào <b>Cài đặt</b> để dán cả bảng giá từ Excel.')+'</div>':L.length>lim?'<button data-a="more">Xem thêm '+Math.min(36,L.length-lim)+' mẫu</button>':''}
 function findCode(raw){raw=String(raw||'').trim();const m=raw.match(/[#&?]m=([^&]+)/);if(m){try{raw=decodeURIComponent(m[1])}catch(e){raw=m[1]}}const k=nz(raw).trim();return k?live().find(t=>nz(t.code)===k)||null:null}
 function openTile(id){const t=tile(id);if(!t)return;const o=owner(),m=mpb(t),r=(l,v)=>v?'<span>'+l+'</span><div>'+esc(v)+'</div>':'';
   const mg=+t.cost>0&&sp(t)>0?Math.round((sp(t)/t.cost-1)*100):null;
@@ -164,15 +169,17 @@ function openTile(id){const t=tile(id);if(!t)return;const o=owner(),m=mpb(t),r=(
   '<div class="pr">'+(sp(t)?(perM2(t)?'<div class="pm">'+money(perM2(t))+'<small>/m²</small></div>':'')+(perBox(t)?'<div class="pb">'+money(perBox(t))+'<small>/thùng</small></div>':'')+(!perM2(t)&&!perBox(t)?'<div class="pm">'+money(sp(t))+'<small>/'+cuName(t.cu)+'</small></div>':''):'<span class="mute">Chưa có giá</span>')+'</div>'+
   (o&&+t.cost>0?'<div class="cost">Giá nhập <b>'+money(t.cost)+'/'+cuName(t.cu)+'</b>'+(mg!=null?' · lãi '+mg+'% trên giá nhập':'')+'</div>':'')+
   '<div class="calc"><label style="margin:0">Diện tích cần mua (m²)<input id="ca" type="number" inputmode="decimal" step="any" min="0" placeholder="VD: 25"></label><div class="res" id="cr"></div></div>'+
-  '<div class="acts"><button class="pri" data-a="addq" data-v="'+id+'">＋ Báo giá</button><button data-a="edit" data-v="'+id+'">Sửa</button><button data-a="lab1" data-v="'+id+'">In tem QR</button></div>');
+  '<div class="acts"><button class="pri" data-a="addq" data-v="'+id+'">＋ Báo giá</button><button data-a="clone" data-v="'+id+'">Nhân bản</button><button data-a="edit" data-v="'+id+'">Sửa</button><button data-a="lab1" data-v="'+id+'">In tem QR</button></div>');
+  full(id).then(u=>{const b=$('.big');if(u&&b&&$('#ov'))b.innerHTML='<img src="'+u+'" alt="">'});
   $('#ca').oninput=e=>{const c=calc(t,e.target.value,+db.s.waste||0);$('#cr').textContent=c?'Cần '+c.txt+(db.s.waste?' (đã cộng hao hụt '+db.s.waste+'%)':'')+' → '+money(c.amt):''}}
 
 /* ===== Thêm / sửa mẫu ===== */
-let pend=null;
+let pend=null,cloneSrc=null;
+function cloneOf(id){const s=tile(id);if(!s)return null;const c={...s};['id','code','ih','c','u','printed','del'].forEach(k=>delete c[k]);return c}
 const dl=(id,L)=>'<datalist id="'+id+'">'+L.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>';
-function editTile(id){const t=id?tile(id):{cu:'m2',kind:'nen'},o=owner();if(!t)return;pend=null;
+function editTile(id,from){const t=id?tile(id):(from?cloneOf(from):{cu:'m2',kind:'nen'}),o=owner();if(!t)return;pend=null;cloneSrc=id?null:(from||null);const sc=from&&tile(from);
   const sel=(i,O,v)=>'<select id="'+i+'">'+O.map(a=>'<option value="'+a[0]+'"'+(a[0]===v?' selected':'')+'>'+a[1]+'</option>').join('')+'</select>';
-  sheet('<div class="sh"><b>'+(id?'Sửa mẫu':'Thêm mẫu mới')+'</b><button class="x" data-a="shut" aria-label="Đóng">✕</button></div>'+
+  sheet('<div class="sh"><b>'+(id?'Sửa mẫu':sc?'Nhân bản mẫu':'Thêm mẫu mới')+'</b><button class="x" data-a="shut" aria-label="Đóng">✕</button></div>'+(sc?'<p class="cost" style="background:var(--acl);color:var(--acd)">Sao chép từ <b>'+esc(sc.code)+'</b>: giữ nguyên hãng, kích thước, giá, quy cách. Chỉ cần đổi <b>mã</b> và <b>ảnh</b>.</p>':'')+
   '<div class="row" style="margin-bottom:10px;align-items:flex-start"><div class="im" id="pv" style="width:96px;height:96px;border-radius:10px;border:1px dashed var(--grout)">'+imgTag(t.id?t:{})+'</div><div class="g"><button data-a="pick" data-v="cam" class="pri">📷 Chụp ảnh</button> <button data-a="pick" data-v="lib">Chọn ảnh</button><input type="file" id="fcam" accept="image/*" capture="environment" hidden><input type="file" id="flib" accept="image/*" hidden></div></div>'+
   '<div class="two"><label>Mã số *<input id="fcode" value="'+esc(t.code)+'" autocomplete="off"></label><label>Tên mẫu<input id="fname" value="'+esc(t.name)+'"></label></div>'+
   '<div class="two"><label>Công ty / hãng *<input id="fbrand" list="lb" value="'+esc(t.brand)+'"></label><label>Kích thước (cm)<input id="fsize" list="ls" placeholder="60x60" value="'+esc(t.size)+'"></label></div>'+
@@ -182,16 +189,17 @@ function editTile(id){const t=id?tile(id):{cu:'m2',kind:'nen'},o=owner();if(!t)r
   (o?'<div class="thr"><label>Giá nhập<input id="fcost" type="number" inputmode="decimal" value="'+esc(t.cost)+'"></label><label>Tính theo<select id="fcu">'+[['m2','đ / m²'],['box','đ / thùng'],['pc','đ / viên']].map(a=>'<option value="'+a[0]+'"'+(t.cu===a[0]?' selected':'')+'>'+a[1]+'</option>').join('')+'</select></label><label>Giá bán (nếu khác giá tự tính)<input id="fprice" type="number" inputmode="decimal" value="'+esc(t.price)+'"></label></div>':'')+
   '<label>Ghi chú<textarea id="fnote" style="min-height:60px">'+esc(t.note)+'</textarea></label>'+
   dl('lb',uniq(x=>x.brand))+dl('ls',uniq(x=>x.size))+dl('lc',uniq(x=>x.color))+dl('lsf',uniq(x=>x.surface))+
-  '<div class="acts"><button class="pri" data-a="savet" data-v="'+(id||'')+'">Lưu mẫu</button>'+(id&&o?'<button class="dz" data-a="delt" data-v="'+id+'">Xóa</button>':'')+'</div>');
-  ['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{pend=await imgFit(f);$('#pv').innerHTML='<img src="'+pend+'" alt="">'}catch(x){alert(x.message)}})}
-function saveTile(id){const v=i=>{const e=$('#'+i);return e?e.value.trim():undefined};const code=v('fcode'),brand=v('fbrand');
+  '<div class="acts"><button class="pri" data-a="savet" data-v="'+(id||'')+'">Lưu mẫu</button>'+(id?'':'<button data-a="savea">Lưu và nhân bản tiếp</button>')+(id&&o?'<button class="dz" data-a="delt" data-v="'+id+'">Xóa</button>':'')+'</div>');
+  ['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{pend=await imgFit(f);$('#pv').innerHTML='<img src="'+pend.full+'" alt="">'}catch(x){alert(x.message)}})
+  if(sc)setTimeout(()=>{const e=$('#fcode');if(e)e.focus()},60)}
+function saveTile(id,again){const v=i=>{const e=$('#'+i);return e?e.value.trim():undefined};const code=v('fcode'),brand=v('fbrand');
   if(!code)return alert('Hãy nhập mã số của mẫu gạch.');if(!brand)return alert('Hãy nhập tên công ty / hãng.');
   if(live().some(t=>t.id!==id&&nz(t.code)===nz(code)))return alert('Mã "'+code+'" đã có mẫu khác dùng. Mỗi mẫu cần một mã riêng để quét QR không bị nhầm.');
   let t=id?tile(id):null;const isNew=!t;if(isNew){t={id:uid(),c:Date.now()};db.tiles.push(t)}
   Object.assign(t,{code,name:v('fname'),brand,size:normSize(v('fsize')),color:v('fcolor'),kind:v('fkind'),surface:v('fsurf'),ppb:v('fppb'),mpb:v('fmpb'),note:v('fnote')});
-  if(owner()){Object.assign(t,{cost:v('fcost'),cu:v('fcu'),price:v('fprice')})}else if(isNew)t.cu='m2';
-  if(pend){IMG[t.id]=pend;t.ih=imgH(pend);try{idb&&idbP('img:'+t.id,pend)}catch(e){}pimgSet([...pimg(),t.id]);pend=null}
-  t.u=Date.now();save();shut();toast('Đã lưu '+t.code);redraw();gSched()}
+  if(owner()){Object.assign(t,{cost:v('fcost'),cu:v('fcu'),price:v('fprice')})}else if(isNew){t.cu='m2';const s0=cloneSrc&&tile(cloneSrc);if(s0)Object.assign(t,{cost:s0.cost,cu:s0.cu,price:s0.price})}
+  if(pend){setImg(t.id,pend.full,pend.thumb,imgH(pend.full));t.ih=IHL[t.id];pimgSet([...pimg(),t.id]);pend=null}
+  t.u=Date.now();save();shut();toast('Đã lưu '+t.code);redraw();gSched();if(again)editTile('',t.id)}
 
 /* ===== Báo giá ===== */
 let dr=(()=>{try{return JSON.parse(LS('gm_draft'))}catch(e){return null}})()||{cust:'',phone:'',lines:[]};
@@ -218,7 +226,7 @@ function printHtml(body,css){const f=document.createElement('iframe');f.style.cs
 /* ===== Tem QR ===== */
 const LBS={'50x30':[50,30],'40x30':[40,30],'60x40':[60,40],'70x40':[70,40]};let lb={size:'50x30',price:false,q:'',sel:{}};
 const qrText=t=>{const b=(db.s.qrBase||(location.protocol.indexOf('http')===0?location.origin+location.pathname:'')).trim();return b?b+'#m='+encodeURIComponent(t.code):t.code};
-function vLabels(){const k=nz(lb.q),L=live().filter(t=>!k||nz([t.code,t.name,t.brand,t.size,t.color].join(' ')).includes(k)).sort((a,b)=>(a.printed?1:0)-(b.printed?1:0)||a.code.localeCompare(b.code,'vi',{numeric:true})).slice(0,80);
+function vLabels(){const k=nz(lb.q),L=live().filter(t=>!k||nz([t.code,t.name,t.brand,t.size,t.color].join(' ')).includes(k)).sort((a,b)=>(a.printed?1:0)-(b.printed?1:0)||a.code.localeCompare(b.code,'vi',{numeric:true})).slice(0,50);
   $('#main').innerHTML='<div class="card"><h2>In tem QR dán lên gạch</h2><p><small>Quét tem bằng camera điện thoại bất kỳ sẽ mở thẳng mẫu gạch trong phần mềm. Tem không in giá nhập.</small></p><div class="two"><label>Khổ tem<select id="ls">'+Object.keys(LBS).map(s=>'<option value="'+s+'"'+(lb.size===s?' selected':'')+'>Cuộn '+s.replace('x',' × ')+' mm</option>').join('')+'<option value="a4"'+(lb.size==='a4'?' selected':'')+'>Giấy A4 (tem 50×30)</option></select></label><label style="padding-top:22px"><input type="checkbox" id="lp" style="width:auto;min-height:0;margin-right:6px"'+(lb.price?' checked':'')+'>In giá bán lên tem</label></div>'+
   '<input id="lq" type="search" placeholder="Tìm mẫu cần in…" value="'+esc(lb.q)+'" autocomplete="off" style="margin-bottom:8px"><div class="row"><button data-a="lsel">Chọn mẫu chưa in</button><button data-a="lnone">Bỏ chọn</button><button class="pri g" data-a="lgo" id="lgo"></button></div></div>'+
   '<div class="card" style="padding:4px 14px">'+(L.map(t=>'<div class="lr"><input type="checkbox" data-lc="'+t.id+'"'+(lb.sel[t.id]?' checked':'')+' aria-label="Chọn '+esc(t.code)+'"><div class="im">'+imgTag(t)+'</div><div class="g"><b>'+esc(t.code)+'</b> '+(t.printed?'<span class="tag ok">Đã in</span>':'<span class="tag w">Chưa in</span>')+'<br><small>'+esc([t.size,t.color,t.brand].filter(Boolean).join(' · '))+'</small></div></div>').join('')||'<div class="empty">Chưa có mẫu nào.</div>')+'</div>';
@@ -258,10 +266,19 @@ function importText(txt){const lines=txt.replace(/\r/g,'').split('\n').filter(l=
   save();toast('Đã thêm '+add+' mẫu, cập nhật '+upd+' mẫu');$('#imp').value=''}
 
 /* ===== Ảnh ===== */
-const imgFit=f=>new Promise((ok,no)=>{const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(url);const c=document.createElement('canvas'),x=c.getContext('2d');let out='';
-  for(const S of[640,520,420,320]){const k=Math.min(1,S/Math.max(im.width,im.height));c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
-   for(const q of[.72,.62,.5,.4]){out=c.toDataURL('image/webp',q);if(out.indexOf('data:image/webp')!==0)out=c.toDataURL('image/jpeg',q);if(out.length*.75<=45000)return ok(out)}}ok(out)};
-  im.onerror=()=>{URL.revokeObjectURL(url);no(new Error('Không đọc được file ảnh này.'))};im.src=url});
+const loadIm=src=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>no(new Error('Không đọc được file ảnh này.'));im.src=src});
+const cvs=(im,S)=>{const k=Math.min(1,S/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);return c};
+const enc=(c,q)=>{let o=c.toDataURL('image/webp',q);if(o.indexOf('data:image/webp')!==0)o=c.toDataURL('image/jpeg',q);return o};
+const szB=u=>(u.length-u.indexOf(',')-1)*.75;
+/* ảnh đầy đủ <= 20 KB: thử khổ lớn trước, tìm chất lượng cao nhất còn vừa 20 KB; thêm ảnh nhỏ 144px cho lưới */
+async function imgFit(f){const url=URL.createObjectURL(f);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}
+  let best='';for(const S of[600,520,460,400,340,280,240]){const c=cvs(im,S);let lo=.3,hi=.9,ok=null;for(let i=0;i<6;i++){const m=(lo+hi)/2,o=enc(c,m);if(szB(o)<=20000){ok=o;lo=m}else hi=m}
+    if(ok){best=ok;if(lo>=.55)break}else if(!best)best=enc(c,.3)}
+  return{full:best,thumb:enc(cvs(im,144),.6)}}
+const mkThumb=async u=>enc(cvs(await loadIm(u),144),.6);
+let ihT;const ihSave=()=>{clearTimeout(ihT);ihT=setTimeout(()=>{try{idbP('ihl',IHL)}catch(e){}},400)};
+function setImg(id,u,th,h){TH[id]=th;IHL[id]=h;try{idbP('img:'+id,u);idbP('th:'+id,th)}catch(e){}ihSave()}
+async function fixThumbs(){if(!idb)return;try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id])continue;const u=await idbG(k);if(!u)continue;try{TH[id]=await mkThumb(u);await idbP('th:'+id,TH[id]);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}}catch(e){}}}catch(e){}}
 const imgH=u=>{u=u.slice(u.indexOf(',')+1);let h=2166136261;for(let i=0;i<u.length;i++){h^=u.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+u.length.toString(36)};
 const pimg=()=>{try{return JSON.parse(LS('gm_pimg')||'[]')}catch(e){return[]}};const pimgSet=a=>LS('gm_pimg',JSON.stringify([...new Set(a)]));
 const QRG=(()=>{
@@ -364,7 +381,7 @@ async function gSync(o={}){
   if(gBusy||!gOn())return;
   if(!navigator.onLine)return gSet('offline','Đang offline. Dữ liệu lưu trên máy, sẽ tự đồng bộ khi có mạng.');
   if(!gValid()&&!o.interactive)return gSet('auth','Phiên đăng nhập Google đã hết hạn. Bấm nút ☁ trên đầu trang để đăng nhập lại. Dữ liệu vẫn lưu trên máy.');
-  gBusy=true;gSet('busy','Đang đồng bộ…');let ok=false;
+  gBusy=true;gSet('busy','Đang đồng bộ…');let ok=false,chg=false;
   try{
     for(let n=0;n<3;n++){
       let id=LS('gm_fid'),meta=null;
@@ -374,12 +391,12 @@ async function gSync(o={}){
       const seq=gSeq,newer=String(meta.version)!==LS('gm_ver');
       if(!newer&&!gDirtyF())break;
       let same=false;
-      if(newer){const rem=normDb(await gDown(id));apply(mergeDb(db,rem));same=sig(db)===sig(rem)}
+      if(newer){chg=true;const rem=normDb(await gDown(id));apply(mergeDb(db,rem));same=sig(db)===sig(rem)}
       if(!same){const m2=await gMeta(id);if(String(m2.version)!==String(meta.version))continue;const r=await gUp(id,JSON.stringify(db));LS('gm_ver',String(r.version))}else LS('gm_ver',String(meta.version));
       if(seq===gSeq)LS('gm_dirty','0');break}
     ok=true;gSet('ok','Đã đồng bộ lúc '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+'.');
     if(o.manual)toast('Đã đồng bộ với Google Drive');
-    imgSync().catch(e=>{imgMsg='Ảnh chưa đồng bộ được, sẽ thử lại.';gUI()});
+    if(o.manual||chg||pimg().length||Date.now()-(+LS('gm_ilast')||0)>3e5)imgSync().catch(e=>{imgMsg='Ảnh chưa đồng bộ được, sẽ thử lại.';gUI()});
   }catch(e){const msg=e.message||String(e);gSet(e.auth||/Drive 40[13]/.test(msg)?'auth':(e.net||/Failed to fetch|NetworkError/i.test(msg)?'offline':'err'),msg);if(o.manual)alert('Đồng bộ chưa thành công: '+msg)}
   finally{gBusy=false;gUI();if(ok&&gDirtyF())gSched()}}
 /* ảnh: mỗi ảnh một file gm_<mã mẫu> trong thư mục GachMen_HinhAnh; máy khác chỉ tải ảnh còn thiếu */
@@ -392,13 +409,13 @@ async function upImg(id,u,fid,F){const mime=u.slice(5,u.indexOf(';')),bin=atob(u
 async function imgDown(id){const b=await(await gFetch(API+'/'+id+'?alt=media')).blob();let u=await new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok(f.result);f.onerror=no;f.readAsDataURL(b)});if(!/^data:image\//.test(u))u='data:image/webp;base64,'+u.slice(u.indexOf(',')+1);return u}
 async function imgSync(){const F=await gFolder(),rem={};let pt='';
   do{const j=await(await gFetch(API+'?q='+encodeURIComponent("'"+F+"' in parents and trashed=false")+'&fields=nextPageToken,files(id,name)&pageSize=1000'+(pt?'&pageToken='+pt:''))).json();(j.files||[]).forEach(f=>rem[f.name]=f.id);pt=j.nextPageToken||''}while(pt);
-  const left=[];let up=0;for(const id of pimg()){const t=tile(id),u=IMG[id];if(!t||!u)continue;try{rem['gm_'+id]=await upImg(id,u,rem['gm_'+id],F);up++}catch(e){left.push(id);if(/Drive 40[13]|Failed to fetch/.test(e.message))throw e}}pimgSet(left);
-  const need=live().filter(t=>t.ih&&rem['gm_'+t.id]&&!left.includes(t.id)&&(!IMG[t.id]||imgH(IMG[t.id])!==t.ih));
-  await pool(need,4,async t=>{const u=await imgDown(rem['gm_'+t.id]);IMG[t.id]=u;try{await idbP('img:'+t.id,u)}catch(e){}});
+  const left=[];let up=0;for(const id of pimg()){const t=tile(id),u=await full(id);if(!t||!u)continue;try{rem['gm_'+id]=await upImg(id,u,rem['gm_'+id],F);up++}catch(e){left.push(id);if(/Drive 40[13]|Failed to fetch/.test(e.message))throw e}}pimgSet(left);
+  const need=live().filter(t=>t.ih&&rem['gm_'+t.id]&&!left.includes(t.id)&&IHL[t.id]!==t.ih);
+  await pool(need,4,async t=>{const u=await imgDown(rem['gm_'+t.id]);setImg(t.id,u,await mkThumb(u).catch(()=>''),t.ih)});LS('gm_ilast',String(Date.now()));
   imgMsg=(need.length||up)?'Ảnh: tải về '+need.length+', đẩy lên '+up+'.':'';gUI();if(need.length)redraw()}
 async function gConnect(){const e=$('#gcid');if(e)LS('gm_cid',e.value.trim());if(!gCid())return alert('Hãy dán OAuth Client ID vào ô Client ID trước (xem hướng dẫn bên dưới).');
   try{LS('gm_hint',null);gTok=null;LS('gm_tok',null);await gToken();try{const u=(await(await gFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)')).json()).user;if(u&&u.emailAddress)LS('gm_hint',u.emailAddress)}catch(e){}
-    LS('gm_on','1');LS('gm_fid',null);LS('gm_ver',null);LS('gm_dirty','1');pimgSet(Object.keys(IMG));await gSync({interactive:true,manual:true})}catch(e){gSet('err',e.message);alert(e.message)}
+    LS('gm_on','1');LS('gm_fid',null);LS('gm_ver',null);LS('gm_dirty','1');pimgSet(Object.keys(IHL));await gSync({interactive:true,manual:true})}catch(e){gSet('err',e.message);alert(e.message)}
   if(tab==='settings')go('settings')}
 function gDisc(){if(!confirm('Ngắt kết nối Google Drive trên máy này? Dữ liệu trên Drive và trên máy vẫn được giữ nguyên, chỉ ngừng đồng bộ.'))return;['gm_on','gm_tok','gm_fid','gm_ver','gm_dirty','gm_hint','gm_pimg'].forEach(k=>LS(k,null));gTok=null;imgMsg='';gSet('off','');go('settings')}
 function syncCard(){const on=gOn();return'<div class="card"><h2>Đồng bộ Google Drive</h2><p><small>Dữ liệu lưu thành file <b>'+GFILE+'</b> và ảnh trong thư mục <b>'+GDIR+'</b> trên Google Drive của bạn. Mọi điện thoại đăng nhập cùng tài khoản Google sẽ thấy cùng một bảng mẫu gạch (kiểm tra mỗi 30 giây, đẩy lên ngay sau mỗi thay đổi). Hai người cùng sửa một lúc thì phần mềm tự gộp, mẫu nào sửa sau cùng được giữ. Mất mạng vẫn tra cứu bình thường, có mạng lại tự đồng bộ. Phiên đăng nhập Google hết hạn sau khoảng 1 giờ; khi nút ☁ trên đầu trang chuyển đỏ, bấm vào để đăng nhập lại.</small></p>'+
@@ -412,10 +429,10 @@ function gInit(){gLoadTok();gUI();if(gOn()){if(gValid())gSync();else gSet('auth'
 const A={
  shut,own:async()=>{if(owner()){LS('gm_own',null);ownUI();go(tab);return}const p=prompt('Nhập mã PIN chủ cửa hàng:');if(p==null)return;if(await hashPin(p)===db.s.pin){LS('gm_own','1');go(tab)}else alert('Sai mã PIN.')},
  gbtn:()=>{if(!gCid()||!gOn())return go('settings');gSync({interactive:true,manual:true})},gsync:()=>gSync({interactive:true,manual:true}),gconnect:gConnect,gdisc:gDisc,
- scanfind:scanFind,add:()=>editTile(''),more:()=>{lim+=60;drawGrid()},open:v=>openTile(v),edit:v=>editTile(v),savet:v=>saveTile(v),
- delt:v=>{const t=tile(v);if(t&&confirm('Xóa mẫu '+t.code+'? Mẫu cũng biến mất trên các điện thoại khác.')){t.del=1;t.u=Date.now();delete IMG[v];try{idbD('img:'+v)}catch(e){}save();shut();redraw()}},
- pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
- zoom:v=>{const u=IMG[v];if(!u)return;const z=document.createElement('div');z.className='zm';z.innerHTML='<img src="'+u+'" alt="">';z.onclick=()=>z.remove();document.body.appendChild(z)},
+ scanfind:scanFind,add:()=>editTile(''),more:()=>{lim+=36;drawGrid()},open:v=>openTile(v),edit:v=>editTile(v),savet:v=>saveTile(v),
+ delt:v=>{const t=tile(v);if(t&&confirm('Xóa mẫu '+t.code+'? Mẫu cũng biến mất trên các điện thoại khác.')){t.del=1;t.u=Date.now();delete TH[v];delete IHL[v];try{idbD('img:'+v);idbD('th:'+v);ihSave()}catch(e){}save();shut();redraw()}},
+ clone:v=>editTile('',v),savea:()=>saveTile('',true),pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
+ zoom:async v=>{const u=(await full(v))||TH[v];if(!u)return;const z=document.createElement('div');z.className='zm';z.innerHTML='<img src="'+u+'" alt="">';z.onclick=()=>z.remove();document.body.appendChild(z)},
  addq:v=>{if(dr.lines.some(l=>l.id===v))toast('Mẫu này đã có trong báo giá');else{dr.lines.push({id:v,qty:0});dsave();toast('Đã thêm vào báo giá')}shut()},
  rmq:v=>{dr.lines.splice(+v,1);dsave();vQuote()},clrq:()=>{if(confirm('Xóa báo giá đang soạn?')){dr={cust:'',phone:'',lines:[]};dsave();vQuote()}},
  saveq:()=>{const s=snap();if(!s.lines.length)return;db.quotes.push({id:uid(),u:Date.now(),time:Date.now(),cust:dr.cust,phone:dr.phone,lines:s.lines,total:s.total,st:'bao'});save();dr={cust:'',phone:'',lines:[]};dsave();toast('Đã lưu báo giá');vQuote()},
@@ -439,8 +456,8 @@ document.addEventListener('change',e=>{const b=e.target;if(b.tagName==='SELECT'&
 function route(){const m=location.hash.match(/#m=(.+)$/);if(!m)return;const t=findCode(location.hash);history.replaceState(null,'',location.pathname+location.search);
   if(t){go('home');openTile(t.id)}else toast(live().length?'Không tìm thấy mẫu trong dữ liệu.':'Máy này chưa có dữ liệu. Hãy kết nối Google Drive ở Cài đặt rồi quét lại.')}
 addEventListener('hashchange',route);
-async function boot(){try{idb=await idbO();db=normDb(await idbG('db'));const R=IDBKeyRange.bound('img:','img:\uffff'),ks=await rq(kv('readonly').getAllKeys(R)),vs=await rq(kv('readonly').getAll(R));ks.forEach((k,i)=>IMG[k.slice(4)]=vs[i])}catch(e){idb=null;try{db=normDb(JSON.parse(LS('gm_db')))}catch(x){db=newDb()}}
-  booting=false;go('home');gInit();route()}
+async function boot(){try{idb=await idbO();db=normDb(await idbG('db'));IHL=(await idbG('ihl'))||{};const R=IDBKeyRange.bound('th:','th:\uffff'),ks=await rq(kv('readonly').getAllKeys(R)),vs=await rq(kv('readonly').getAll(R));ks.forEach((k,i)=>TH[k.slice(3)]=vs[i])}catch(e){idb=null;try{db=normDb(JSON.parse(LS('gm_db')))}catch(x){db=newDb()}}
+  booting=false;go('home');gInit();route();setTimeout(fixThumbs,1500)}
 boot();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});

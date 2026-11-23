@@ -68,6 +68,11 @@ h2.nm{font-size:19px;margin:10px 0 6px}
 .zm{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:12px}.zm img{max-width:100%;max-height:100%;border-radius:8px;background:#fff}
 .scx{position:fixed;inset:0;z-index:400;background:#000;display:flex;flex-direction:column}.scx video{flex:1;min-height:0;width:100%;object-fit:cover}.scb{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;background:rgba(0,0,0,.6)}.scf{position:absolute;left:14%;right:14%;top:30%;aspect-ratio:1;max-height:40%;border:3px solid #6fd3f5;border-radius:14px;pointer-events:none}.scs{padding:14px 16px;color:#fff;background:rgba(0,0,0,.7);text-align:center;font-weight:600}
 textarea{min-height:90px;font-family:inherit}details summary{cursor:pointer;color:var(--ac);font-weight:600}
+.crp{position:fixed;inset:0;z-index:450;background:#101518;display:flex;flex-direction:column;color:#fff;padding-top:env(safe-area-inset-top)}.cb{padding:12px 16px 4px}.cb b{display:block;font-size:17px}.cb small{color:#aab6bb}
+.cw{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}.cin{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}.cin canvas{display:block}
+.cbox{position:absolute;box-shadow:0 0 0 2000px rgba(0,0,0,.6);border:2px solid #fff;touch-action:none;cursor:move;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:33.34% 33.34%}
+.cbox i{position:absolute;width:46px;height:46px}.cbox i[data-h=tl]{left:-12px;top:-12px;border-left:6px solid #6fd3f5;border-top:6px solid #6fd3f5}.cbox i[data-h=tr]{right:-12px;top:-12px;border-right:6px solid #6fd3f5;border-top:6px solid #6fd3f5}.cbox i[data-h=bl]{left:-12px;bottom:-12px;border-left:6px solid #6fd3f5;border-bottom:6px solid #6fd3f5}.cbox i[data-h=br]{right:-12px;bottom:-12px;border-right:6px solid #6fd3f5;border-bottom:6px solid #6fd3f5}
+.cr{display:flex;gap:8px;padding:6px 14px}.cr button{flex:1;padding:9px 6px;background:#243038;color:#fff;border-color:#33434d}.cr button.pri{background:var(--ac);border-color:var(--ac)}.cr:last-child{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
 @media(max-width:480px){.flt{grid-template-columns:1fr 1fr}.thr{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:no-preference){.ov .sb{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.4}}}
 </style>
@@ -94,7 +99,7 @@ const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),2800)}
 
 /* ===== Dữ liệu ===== */
-const newDb=()=>({v:1,tiles:[],quotes:[],s:{shop:'Cửa hàng gạch men',mk:25,waste:5,bm:{},qrBase:'',pin:'',u:0}});
+const newDb=()=>({v:1,tiles:[],quotes:[],s:{shop:'Cửa hàng gạch men',mk:25,waste:5,bm:{},qrBase:'',phone:'',pnote:'Giá tham khảo, có thể thay đổi',pin:'',u:0}});
 function normDb(d){d=d&&typeof d==='object'?d:{};const s=Object.assign(newDb().s,d.s||{});s.bm=s.bm||{};return{v:1,tiles:Array.isArray(d.tiles)?d.tiles:[],quotes:Array.isArray(d.quotes)?d.quotes:[],s}}
 let db=newDb(),TH={},IHL={},idb=null,booting=true,tab='home';
 const rq=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
@@ -169,7 +174,7 @@ function openTile(id){const t=tile(id);if(!t)return;const o=owner(),m=mpb(t),r=(
   '<div class="pr">'+(sp(t)?(perM2(t)?'<div class="pm">'+money(perM2(t))+'<small>/m²</small></div>':'')+(perBox(t)?'<div class="pb">'+money(perBox(t))+'<small>/thùng</small></div>':'')+(!perM2(t)&&!perBox(t)?'<div class="pm">'+money(sp(t))+'<small>/'+cuName(t.cu)+'</small></div>':''):'<span class="mute">Chưa có giá</span>')+'</div>'+
   (o&&+t.cost>0?'<div class="cost">Giá nhập <b>'+money(t.cost)+'/'+cuName(t.cu)+'</b>'+(mg!=null?' · lãi '+mg+'% trên giá nhập':'')+'</div>':'')+
   '<div class="calc"><label style="margin:0">Diện tích cần mua (m²)<input id="ca" type="number" inputmode="decimal" step="any" min="0" placeholder="VD: 25"></label><div class="res" id="cr"></div></div>'+
-  '<div class="acts"><button class="pri" data-a="addq" data-v="'+id+'">＋ Báo giá</button><button data-a="clone" data-v="'+id+'">Nhân bản</button><button data-a="edit" data-v="'+id+'">Sửa</button><button data-a="lab1" data-v="'+id+'">In tem QR</button></div>');
+  '<div class="acts"><button class="pri" data-a="zalo" data-v="'+id+'">Gửi ảnh báo giá</button><button data-a="addq" data-v="'+id+'">＋ Báo giá</button><button data-a="clone" data-v="'+id+'">Nhân bản</button><button data-a="edit" data-v="'+id+'">Sửa</button><button data-a="lab1" data-v="'+id+'">In tem QR</button>'+(o?'<button class="dz" data-a="delt" data-v="'+id+'">Xóa mẫu</button>':'')+'</div>');
   full(id).then(u=>{const b=$('.big');if(u&&b&&$('#ov'))b.innerHTML='<img src="'+u+'" alt="">'});
   $('#ca').oninput=e=>{const c=calc(t,e.target.value,+db.s.waste||0);$('#cr').textContent=c?'Cần '+c.txt+(db.s.waste?' (đã cộng hao hụt '+db.s.waste+'%)':'')+' → '+money(c.amt):''}}
 
@@ -190,7 +195,7 @@ function editTile(id,from){const t=id?tile(id):(from?cloneOf(from):{cu:'m2',kind
   '<label>Ghi chú<textarea id="fnote" style="min-height:60px">'+esc(t.note)+'</textarea></label>'+
   dl('lb',uniq(x=>x.brand))+dl('ls',uniq(x=>x.size))+dl('lc',uniq(x=>x.color))+dl('lsf',uniq(x=>x.surface))+
   '<div class="acts"><button class="pri" data-a="savet" data-v="'+(id||'')+'">Lưu mẫu</button>'+(id?'':'<button data-a="savea">Lưu và nhân bản tiếp</button>')+(id&&o?'<button class="dz" data-a="delt" data-v="'+id+'">Xóa</button>':'')+'</div>');
-  ['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{pend=await imgFit(f);$('#pv').innerHTML='<img src="'+pend.full+'" alt="">'}catch(x){alert(x.message)}})
+  ['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const cc=await cropPick(f);if(!cc)return;pend=fitSrc(cc);$('#pv').innerHTML='<img src="'+pend.full+'" alt="">'}catch(x){alert(x.message)}})
   if(sc)setTimeout(()=>{const e=$('#fcode');if(e)e.focus()},60)}
 function saveTile(id,again){const v=i=>{const e=$('#'+i);return e?e.value.trim():undefined};const code=v('fcode'),brand=v('fbrand');
   if(!code)return alert('Hãy nhập mã số của mẫu gạch.');if(!brand)return alert('Hãy nhập tên công ty / hãng.');
@@ -241,7 +246,7 @@ function printLabels(ids){const a4=lb.size==='a4',[W,H]=a4?LBS['50x30']:LBS[lb.s
 /* ===== Cài đặt ===== */
 function vSettings(){const o=owner(),brands=uniq(t=>t.brand);let h='';
   if(!o)h+='<div class="card"><h2>Chế độ nhân viên</h2><p><small>Bạn đang xem ở chế độ nhân viên: không thấy giá nhập. Bấm nút 🔒 ở đầu trang và nhập mã PIN để mở chế độ chủ.</small></p></div>';
-  else h+='<div class="card"><h2>Cửa hàng và cách tính giá</h2><label>Tên cửa hàng<input id="sshop" value="'+esc(db.s.shop)+'"></label><div class="two"><label>Lãi mặc định (% trên giá nhập)<input id="smk" type="number" inputmode="decimal" value="'+esc(db.s.mk)+'"></label><label>Hao hụt khi tính số thùng (%)<input id="swaste" type="number" inputmode="decimal" value="'+esc(db.s.waste)+'"></label></div>'+
+  else h+='<div class="card"><h2>Cửa hàng và cách tính giá</h2><label>Tên cửa hàng<input id="sshop" value="'+esc(db.s.shop)+'"></label><div class="two"><label>SĐT / Zalo (hiện trên ảnh báo giá)<input id="sphone" inputmode="tel" value="'+esc(db.s.phone)+'"></label><label>Ghi chú cuối ảnh báo giá<input id="spnote" value="'+esc(db.s.pnote)+'"></label></div><div class="two"><label>Lãi mặc định (% trên giá nhập)<input id="smk" type="number" inputmode="decimal" value="'+esc(db.s.mk)+'"></label><label>Hao hụt khi tính số thùng (%)<input id="swaste" type="number" inputmode="decimal" value="'+esc(db.s.waste)+'"></label></div>'+
    (brands.length?'<details><summary>Lãi riêng theo từng hãng</summary><p><small>Bỏ trống = dùng lãi mặc định. Mẫu nào có nhập giá bán riêng thì luôn dùng giá đó.</small></p><div class="two">'+brands.map(b=>'<label>'+esc(b)+' (%)<input type="number" inputmode="decimal" data-bm="'+esc(b)+'" value="'+esc(db.s.bm[b]==null?'':db.s.bm[b])+'"></label>').join('')+'</div></details>':'')+'</div>'+
    '<div class="card"><h2>Mã QR</h2><label>Địa chỉ phần mềm dùng trong mã QR<input id="sqr" value="'+esc(db.s.qrBase)+'" placeholder="'+esc(location.protocol.indexOf('http')===0?location.origin+location.pathname:'https://ten-ban.github.io/gachmen/')+'"></label><p><small>Để trống: tự lấy địa chỉ đang mở. Nếu sau này đổi địa chỉ web, các tem đã dán sẽ không mở được nữa, nên hãy dùng một địa chỉ cố định ngay từ đầu.</small></p></div>'+
    '<div class="card"><h2>Mã PIN chủ cửa hàng</h2><p><small>Đặt PIN để điện thoại nhân viên không hiện giá nhập. Lưu ý: đây là khóa giao diện, dữ liệu giá nhập vẫn nằm trong file trên Drive của bạn, nên chỉ cho nhân viên dùng chung tài khoản Google khi tin tưởng.</small></p><div class="row"><input id="spin" type="password" inputmode="numeric" placeholder="'+(db.s.pin?'Nhập PIN mới để đổi':'Đặt mã PIN (4-8 số)')+'" class="g"><button data-a="setpin">'+(db.s.pin?'Đổi PIN':'Đặt PIN')+'</button>'+(db.s.pin?'<button class="dz" data-a="nopin">Bỏ PIN</button>':'')+'</div></div>'+
@@ -249,7 +254,7 @@ function vSettings(){const o=owner(),brands=uniq(t=>t.brand);let h='';
    '<div class="card"><h2>Sao lưu</h2><div class="row"><button data-a="bk">Tải file sao lưu (.json)</button><button data-a="rs">Khôi phục từ file…</button><input type="file" id="rsfile" accept=".json" hidden></div><small>Ảnh nằm trong Drive nên file sao lưu chỉ gồm thông tin mẫu và báo giá.</small></div>';
   $('#main').innerHTML=h+syncCard();
   const sv=(id,f)=>{const e=$('#'+id);if(e)e.onchange=()=>{f(e.value.trim());db.s.u=Date.now();save();$('#shop').textContent=db.s.shop}};
-  sv('sshop',v=>db.s.shop=v||'Cửa hàng gạch men');sv('smk',v=>db.s.mk=+v||0);sv('swaste',v=>db.s.waste=+v||0);sv('sqr',v=>db.s.qrBase=v);
+  sv('sshop',v=>db.s.shop=v||'Cửa hàng gạch men');sv('smk',v=>db.s.mk=+v||0);sv('swaste',v=>db.s.waste=+v||0);sv('sqr',v=>db.s.qrBase=v);sv('sphone',v=>db.s.phone=v);sv('spnote',v=>db.s.pnote=v);
   document.querySelectorAll('[data-bm]').forEach(e=>e.onchange=()=>{const b=e.dataset.bm;if(e.value.trim()==='')delete db.s.bm[b];else db.s.bm[b]=+e.value;db.s.u=Date.now();save()});
   const rf=$('#rsfile');if(rf)rf.onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const d=JSON.parse(await f.text());if(!d.tiles)throw 0;if(!confirm('Gộp dữ liệu trong file sao lưu vào dữ liệu hiện tại?'))return;db=mergeDb(db,d);save();toast('Đã khôi phục');go('settings')}catch(x){alert('File không đúng định dạng sao lưu.')}};
   const pf=$('#impfile');if(pf)pf.onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f){$('#imp').value=await f.text();toast('Đã đọc file, bấm Nhập để thêm vào')}};
@@ -271,8 +276,8 @@ const cvs=(im,S)=>{const k=Math.min(1,S/Math.max(im.width,im.height)),c=document
 const enc=(c,q)=>{let o=c.toDataURL('image/webp',q);if(o.indexOf('data:image/webp')!==0)o=c.toDataURL('image/jpeg',q);return o};
 const szB=u=>(u.length-u.indexOf(',')-1)*.75;
 /* ảnh đầy đủ <= 20 KB: thử khổ lớn trước, tìm chất lượng cao nhất còn vừa 20 KB; thêm ảnh nhỏ 144px cho lưới */
-async function imgFit(f){const url=URL.createObjectURL(f);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}
-  let best='';for(const S of[600,520,460,400,340,280,240]){const c=cvs(im,S);let lo=.3,hi=.9,ok=null;for(let i=0;i<6;i++){const m=(lo+hi)/2,o=enc(c,m);if(szB(o)<=20000){ok=o;lo=m}else hi=m}
+async function imgFit(f){const url=URL.createObjectURL(f);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}return fitSrc(im)}
+function fitSrc(im){let best='';for(const S of[600,520,460,400,340,280,240]){const c=cvs(im,S);let lo=.3,hi=.9,ok=null;for(let i=0;i<6;i++){const m=(lo+hi)/2,o=enc(c,m);if(szB(o)<=20000){ok=o;lo=m}else hi=m}
     if(ok){best=ok;if(lo>=.55)break}else if(!best)best=enc(c,.3)}
   return{full:best,thumb:enc(cvs(im,144),.6)}}
 const mkThumb=async u=>enc(cvs(await loadIm(u),144),.6);
@@ -281,6 +286,80 @@ function setImg(id,u,th,h){TH[id]=th;IHL[id]=h;try{idbP('img:'+id,u);idbP('th:'+
 async function fixThumbs(){if(!idb)return;try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id])continue;const u=await idbG(k);if(!u)continue;try{TH[id]=await mkThumb(u);await idbP('th:'+id,TH[id]);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}}catch(e){}}}catch(e){}}
 const imgH=u=>{u=u.slice(u.indexOf(',')+1);let h=2166136261;for(let i=0;i<u.length;i++){h^=u.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+u.length.toString(36)};
 const pimg=()=>{try{return JSON.parse(LS('gm_pimg')||'[]')}catch(e){return[]}};const pimgSet=a=>LS('gm_pimg',JSON.stringify([...new Set(a)]));
+/* ===== Cắt ảnh trước khi nén ===== */
+const toCan=(im,max)=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);return c};
+const rot90=s=>{const c=document.createElement('canvas');c.width=s.height;c.height=s.width;const x=c.getContext('2d');x.translate(c.width,0);x.rotate(Math.PI/2);x.drawImage(s,0,0);return c};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+async function cropPick(file){const url=URL.createObjectURL(file);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}
+  return new Promise(ok=>{let src=toCan(im,2000),ar=1,dW=0,dH=0,box={x:0,y:0,w:0,h:0},drag=null;
+    const o=document.createElement('div');o.className='crp';
+    o.innerHTML='<div class="cb"><b>Cắt bỏ phần thừa</b><small>Kéo khung để di chuyển, kéo 4 góc để đổi cỡ</small></div><div class="cw"><div class="cin"><canvas></canvas><div class="cbox"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div></div>'+
+    '<div class="cr">'+[['Tự do',0],['Vuông 1:1',1],['4:3',4/3],['3:4',3/4]].map(a=>'<button data-ar="'+a[1]+'"'+(a[1]===1?' class="pri"':'')+'>'+a[0]+'</button>').join('')+'<button data-c="rot">↻ Xoay</button></div><div class="cr"><button data-c="no">Hủy</button><button class="pri" data-c="ok" style="flex:2">Dùng ảnh này</button></div>';
+    document.body.appendChild(o);document.body.style.overflow='hidden';
+    const cw=o.querySelector('.cw'),wr=o.querySelector('.cin'),cv=o.querySelector('canvas'),bx=o.querySelector('.cbox');
+    const paint=()=>{bx.style.cssText='left:'+box.x+'px;top:'+box.y+'px;width:'+box.w+'px;height:'+box.h+'px'};
+    const refit=(cx,cy)=>{let w,h;if(ar){w=Math.min(dW*.92,dH*.92*ar);h=w/ar}else{w=dW*.92;h=dH*.92}
+      if(cx==null){cx=dW/2;cy=dH/2}box={x:clamp(cx-w/2,0,dW-w),y:clamp(cy-h/2,0,dH-h),w,h};paint()};
+    const layout=()=>{const mw=cw.clientWidth-16,mh=cw.clientHeight-16,k=Math.min(mw/src.width,mh/src.height);dW=Math.round(src.width*k);dH=Math.round(src.height*k);wr.style.width=dW+'px';wr.style.height=dH+'px';
+      const d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(dW*d);cv.height=Math.round(dH*d);cv.style.width=dW+'px';cv.style.height=dH+'px';const x=cv.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(src,0,0,cv.width,cv.height);refit()};
+    requestAnimationFrame(layout);
+    const done=r=>{o.remove();document.body.style.overflow=$('#ov')?'hidden':'';ok(r)};
+    o.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+      if(b.dataset.ar!=null){ar=+b.dataset.ar;o.querySelectorAll('[data-ar]').forEach(x=>x.classList.toggle('pri',x===b));refit(box.x+box.w/2,box.y+box.h/2)}
+      else if(b.dataset.c==='rot'){src=rot90(src);layout()}
+      else if(b.dataset.c==='no')done(null);
+      else if(b.dataset.c==='ok'){const k=src.width/dW,c=document.createElement('canvas');c.width=Math.max(1,Math.round(box.w*k));c.height=Math.max(1,Math.round(box.h*k));c.getContext('2d').drawImage(src,box.x*k,box.y*k,box.w*k,box.h*k,0,0,c.width,c.height);done(c)}});
+    bx.addEventListener('pointerdown',e=>{e.preventDefault();bx.setPointerCapture(e.pointerId);drag={h:e.target.dataset.h||'',sx:e.clientX,sy:e.clientY,b:{...box}}});
+    bx.addEventListener('pointermove',e=>{if(!drag)return;const b=drag.b;
+      if(!drag.h){box.x=clamp(b.x+e.clientX-drag.sx,0,dW-b.w);box.y=clamp(b.y+e.clientY-drag.sy,0,dH-b.h)}
+      else{const r=wr.getBoundingClientRect(),px=clamp(e.clientX-r.left,0,dW),py=clamp(e.clientY-r.top,0,dH),ax=drag.h[1]==='l'?b.x+b.w:b.x,ay=drag.h[0]==='t'?b.y+b.h:b.y,
+        sx=px>=ax?1:-1,sy=py>=ay?1:-1,aw=sx>0?dW-ax:ax,ah=sy>0?dH-ay:ay;let w=Math.min(Math.abs(px-ax),aw),h=Math.min(Math.abs(py-ay),ah);
+        if(ar){w=Math.min(w,h*ar);h=w/ar}w=Math.max(w,40);h=Math.max(h,ar?40/ar:40);
+        box={x:sx>0?ax:ax-w,y:sy>0?ay:ay-h,w,h}}
+      paint()});
+    ['pointerup','pointercancel'].forEach(t=>bx.addEventListener(t,()=>{drag=null}))})}
+/* ===== Ảnh báo giá gửi Zalo ===== */
+const FF='-apple-system,"SF Pro Display","Segoe UI",Roboto,Arial,sans-serif';
+const rr=(x,a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
+const fitTx=(x,t,mw)=>{if(x.measureText(t).width<=mw)return t;while(t.length>1&&x.measureText(t+'…').width>mw)t=t.slice(0,-1);return t+'…'};
+function photo(x,im,X,Y,W,H,cover){if(!im){x.fillStyle='#e3e7e9';x.fillRect(X,Y,W,H);x.strokeStyle='#c4cbce';x.lineWidth=4;for(let i=1;i<3;i++){x.beginPath();x.moveTo(X+W*i/3,Y);x.lineTo(X+W*i/3,Y+H);x.moveTo(X,Y+H*i/3);x.lineTo(X+W,Y+H*i/3);x.stroke()}return}
+  const k=cover?Math.max(W/im.width,H/im.height):Math.min(W/im.width,H/im.height),w=im.width*k,h=im.height*k;x.save();x.beginPath();x.rect(X,Y,W,H);x.clip();x.imageSmoothingQuality='high';x.drawImage(im,X+(W-w)/2,Y+(H-h)/2,w,h);x.restore()}
+async function priceCard(t,st,area){const W=840,u=(await full(t.id))||TH[t.id];let im=null;if(u)try{im=await loadIm(u)}catch(e){}
+  const a=perM2(t),b=perBox(t),p=sp(t),mp=mpb(t),c=area>0?calc(t,area,+db.s.waste||0):null,AC='#1d5c78',INK='#1b2326',MUT='#5d686d';
+  const spec=[t.size?t.size.replace('x','×')+' cm':'',t.color,t.surface,t.brand].filter(Boolean).join('  ·  ');
+  const main=a?[money(a),'/m²']:p?[money(p),'/'+cuName(t.cu)]:['Liên hệ',''],sub=a&&b?money(b)+' / thùng'+(mp?'  ('+f2(mp)+' m²)':''):'';
+  const nm=t.name&&nz(t.name)!==nz(t.code)?t.name:'',foot=[db.s.shop,db.s.phone].filter(Boolean),note=(db.s.pnote?db.s.pnote+' · ':'')+fmtD(Date.now());
+  const over=st==='over',PH=W,BH=over?0:(8+30+62+(nm?46:0)+(spec?42:0)+112+(sub?50:0)+(c?84:0)+118),H=PH+BH;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.textBaseline='alphabetic';x.fillStyle='#fff';x.fillRect(0,0,W,H);
+  photo(x,im,0,0,W,PH,over);
+  const money2=(px,y,col,sh)=>{x.font='800 '+px+'px '+FF;x.fillStyle=col;if(sh){x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=10}x.fillText(main[0],44,y);const w=x.measureText(main[0]).width;x.font='600 '+Math.round(px*.4)+'px '+FF;x.fillText(main[1],44+w+8,y);x.shadowBlur=0};
+  if(over){const g=x.createLinearGradient(0,H*.5,0,H);g.addColorStop(0,'rgba(10,18,22,0)');g.addColorStop(1,'rgba(10,18,22,.8)');x.fillStyle=g;x.fillRect(0,H*.5,W,H*.5);
+    x.font='800 36px '+FF;const cw=x.measureText(t.code).width+44;x.fillStyle='rgba(255,255,255,.93)';rr(x,28,28,cw,64,14);x.fill();x.fillStyle=INK;x.fillText(t.code,50,73);
+    money2(100,H-150,'#fff',true);x.fillStyle='#fff';x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=8;
+    if(sub){x.font='700 32px '+FF;x.fillText(sub,44,H-100)}x.font='500 27px '+FF;x.fillStyle='rgba(255,255,255,.92)';x.fillText(fitTx(x,spec,W-88),44,H-60);
+    x.font='600 23px '+FF;x.fillStyle='rgba(255,255,255,.8)';x.fillText(fitTx(x,foot.join('  ·  '),W-88),44,H-24);x.shadowBlur=0;return cv}
+  let y=PH;x.fillStyle=AC;x.fillRect(0,y,W,8);y+=8+30+52;
+  x.font='800 54px '+FF;x.fillStyle=INK;x.fillText(t.code,44,y);
+  const kn=KINDS[t.kind];if(kn){x.font='600 25px '+FF;const w=x.measureText(kn).width+36;x.fillStyle='#e3eef3';rr(x,W-44-w,y-40,w,50,25);x.fill();x.fillStyle='#133f53';x.fillText(kn,W-44-w+18,y-5)}
+  y+=10;if(nm){y+=36;x.font='600 30px '+FF;x.fillStyle=INK;x.fillText(fitTx(x,nm,W-88),44,y)}
+  if(spec){y+=nm?40:36;x.font='500 27px '+FF;x.fillStyle=MUT;x.fillText(fitTx(x,spec,W-88),44,y)}
+  y+=(spec||nm)?104:70;money2(96,y,AC);
+  if(sub){y+=48;x.font='700 31px '+FF;x.fillStyle='#133f53';x.fillText(sub,44,y)}
+  if(c){y+=30;x.fillStyle='#e3eef3';rr(x,44,y,W-88,60,14);x.fill();x.font='700 27px '+FF;x.fillStyle='#133f53';x.fillText(fitTx(x,f2(area)+' m² cần mua → '+c.txt+' ≈ '+money(c.amt),W-120),62,y+40);y+=60}
+  x.fillStyle='#d0d6d9';x.fillRect(44,H-100,W-88,2);x.font='700 28px '+FF;x.fillStyle=INK;x.textAlign='left';x.fillText(fitTx(x,foot[0]||'',W-420),44,H-58);
+  if(db.s.phone){x.font='700 28px '+FF;x.fillStyle=AC;x.textAlign='right';x.fillText(db.s.phone,W-44,H-58);x.textAlign='left'}
+  x.font='500 21px '+FF;x.fillStyle=MUT;x.fillText(fitTx(x,note,W-88),44,H-24);return cv}
+let zs={t:null,st:LS('gm_cs')||'band',area:0,blob:null,url:''};
+const zMsg=()=>{const t=zs.t,a=perM2(t),b=perBox(t),c=zs.area>0?calc(t,zs.area,+db.s.waste||0):null;
+  return 'Mẫu gạch '+t.code+(t.name?' - '+t.name:'')+'\n'+[t.size?t.size.replace('x','×')+' cm':'',t.color,t.brand].filter(Boolean).join(', ')+'\nGiá: '+(a?money(a)+'/m²':money(sp(t))+'/'+cuName(t.cu))+(b&&a?' ('+money(b)+'/thùng)':'')+(c?'\nCần '+f2(zs.area)+' m² → '+c.txt+' ≈ '+money(c.amt):'')+'\n'+[db.s.shop,db.s.phone].filter(Boolean).join(' - ')};
+async function zRender(){const t=zs.t;if(!t)return;const im=$('#zimg');if(!im)return;im.style.opacity='.4';const c=await priceCard(t,zs.st,zs.area);zs.blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));if(zs.url)URL.revokeObjectURL(zs.url);zs.url=URL.createObjectURL(zs.blob);const e=$('#zimg');if(e){e.src=zs.url;e.style.opacity=''}}
+function zaloSheet(id,area){const t=tile(id);if(!t)return;if(!sp(t)&&!confirm('Mẫu này chưa có giá. Vẫn tạo ảnh?'))return;zs.t=t;zs.area=area||0;
+  sheet('<div class="sh"><b>Ảnh báo giá '+esc(t.code)+'</b><button class="x" data-a="shut" aria-label="Đóng">✕</button></div><img id="zimg" alt="Ảnh báo giá" style="width:100%;border-radius:10px;border:1px solid var(--line);background:#eef0f1;min-height:220px"><p><small>Giữ ngón tay lên ảnh để lưu vào thư viện.</small></p>'+
+  '<div class="row" id="zst" style="margin-bottom:10px"><button data-a="zst" data-v="band" class="g'+(zs.st==='band'?' pri':'')+'">Giá dưới ảnh</button><button data-a="zst" data-v="over" class="g'+(zs.st==='over'?' pri':'')+'">Giá trên ảnh</button></div>'+
+  '<div class="acts"><button class="pri" data-a="zsend" style="flex:2 1 200px">Gửi qua Zalo…</button><button data-a="zsave">Lưu ảnh</button><button data-a="zcopy">Sao chép lời nhắn</button></div>');zRender()}
+async function zSend(){if(!zs.blob)return;const f=new File([zs.blob],'bao-gia-'+zs.t.code.replace(/[^\w-]+/g,'_')+'.jpg',{type:'image/jpeg'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(e){if(e.name==='AbortError')return}}zSave()}
+function zSave(){const a=document.createElement('a');a.href=zs.url;a.download='bao-gia-'+zs.t.code+'.jpg';document.body.appendChild(a);a.click();a.remove();toast('Đã lưu ảnh. Mở Zalo, bấm biểu tượng hình ảnh để gửi.')}
 const QRG=(()=>{
 const ECC=[10,16,26,18,24,16,18,22,22,26],NB=[1,1,1,2,2,4,4,4,5,5];
 const mul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x}return z};
@@ -430,8 +509,8 @@ const A={
  shut,own:async()=>{if(owner()){LS('gm_own',null);ownUI();go(tab);return}const p=prompt('Nhập mã PIN chủ cửa hàng:');if(p==null)return;if(await hashPin(p)===db.s.pin){LS('gm_own','1');go(tab)}else alert('Sai mã PIN.')},
  gbtn:()=>{if(!gCid()||!gOn())return go('settings');gSync({interactive:true,manual:true})},gsync:()=>gSync({interactive:true,manual:true}),gconnect:gConnect,gdisc:gDisc,
  scanfind:scanFind,add:()=>editTile(''),more:()=>{lim+=36;drawGrid()},open:v=>openTile(v),edit:v=>editTile(v),savet:v=>saveTile(v),
- delt:v=>{const t=tile(v);if(t&&confirm('Xóa mẫu '+t.code+'? Mẫu cũng biến mất trên các điện thoại khác.')){t.del=1;t.u=Date.now();delete TH[v];delete IHL[v];try{idbD('img:'+v);idbD('th:'+v);ihSave()}catch(e){}save();shut();redraw()}},
- clone:v=>editTile('',v),savea:()=>saveTile('',true),pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
+ delt:v=>{const t=tile(v);if(t&&confirm('Xóa mẫu '+t.code+'? Mẫu cũng biến mất trên các điện thoại khác.')){t.del=1;t.u=Date.now();dr.lines=dr.lines.filter(l=>l.id!==v);dsave();delete TH[v];delete IHL[v];try{idbD('img:'+v);idbD('th:'+v);ihSave()}catch(e){}save();shut();redraw()}},
+ clone:v=>editTile('',v),zalo:v=>{const e=$('#ca');zaloSheet(v,e?+e.value||0:0)},zsend:zSend,zsave:zSave,zcopy:()=>{navigator.clipboard.writeText(zMsg()).then(()=>toast('Đã sao chép lời nhắn'),()=>prompt('Sao chép:',zMsg()))},zst:v=>{zs.st=v;LS('gm_cs',v);document.querySelectorAll('#zst button').forEach(b=>b.classList.toggle('pri',b.dataset.v===v));zRender()},savea:()=>saveTile('',true),pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
  zoom:async v=>{const u=(await full(v))||TH[v];if(!u)return;const z=document.createElement('div');z.className='zm';z.innerHTML='<img src="'+u+'" alt="">';z.onclick=()=>z.remove();document.body.appendChild(z)},
  addq:v=>{if(dr.lines.some(l=>l.id===v))toast('Mẫu này đã có trong báo giá');else{dr.lines.push({id:v,qty:0});dsave();toast('Đã thêm vào báo giá')}shut()},
  rmq:v=>{dr.lines.splice(+v,1);dsave();vQuote()},clrq:()=>{if(confirm('Xóa báo giá đang soạn?')){dr={cust:'',phone:'',lines:[]};dsave();vQuote()}},

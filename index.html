@@ -38,7 +38,7 @@ nav button b{font-size:20px;line-height:1.1}nav button.on{color:var(--ac);font-w
 .tc{background:#fff;cursor:pointer;display:flex;flex-direction:column;min-width:0;content-visibility:auto;contain-intrinsic-size:auto 230px}
 button,.tc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .im{aspect-ratio:1;background:#eef0f1;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;overflow:hidden}
-.im img{width:100%;height:100%;object-fit:cover;display:block}
+.im img{width:100%;height:100%;object-fit:contain;display:block}
 .tc .tx{padding:7px 9px 9px}.tc b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tc small{display:block;color:var(--mute);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tc .pp{margin-top:3px;font-weight:700;color:var(--acd);font-variant-numeric:tabular-nums}.tc .pp small{display:inline;font-weight:400}
@@ -52,7 +52,7 @@ button,.tc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .sb{background:#fff;width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
 @media(min-width:700px){.ov{align-items:center}.sb{border-radius:16px}}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.sh b{font-size:17px}.x{border:0;font-size:18px;min-height:36px;padding:4px 10px}
-.big{aspect-ratio:4/3;background:#eef0f1;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--mute);cursor:zoom-in}.big img{width:100%;height:100%;object-fit:contain;background:#fff}
+.big{min-height:180px;max-height:58vh;background:#eef0f1;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--mute);cursor:zoom-in}.big img{width:100%;height:auto;max-height:58vh;object-fit:contain;background:#fff}
 h2.nm{font-size:19px;margin:10px 0 6px}
 .spec{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:14.5px;margin:6px 0 10px}.spec span{color:var(--mute)}
 .pr{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;background:var(--acl);border-radius:10px;padding:10px 14px;margin:8px 0}
@@ -72,7 +72,7 @@ textarea{min-height:90px;font-family:inherit}details summary{cursor:pointer;colo
 .cw{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}.cin{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}.cin canvas{display:block}
 .cbox{position:absolute;box-shadow:0 0 0 2000px rgba(0,0,0,.6);border:2px solid #fff;touch-action:none;cursor:move;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:33.34% 33.34%}
 .cbox i{position:absolute;width:46px;height:46px}.cbox i[data-h=tl]{left:-12px;top:-12px;border-left:6px solid #6fd3f5;border-top:6px solid #6fd3f5}.cbox i[data-h=tr]{right:-12px;top:-12px;border-right:6px solid #6fd3f5;border-top:6px solid #6fd3f5}.cbox i[data-h=bl]{left:-12px;bottom:-12px;border-left:6px solid #6fd3f5;border-bottom:6px solid #6fd3f5}.cbox i[data-h=br]{right:-12px;bottom:-12px;border-right:6px solid #6fd3f5;border-bottom:6px solid #6fd3f5}
-.cr{display:flex;gap:8px;padding:6px 14px}.cr button{flex:1;padding:9px 6px;background:#243038;color:#fff;border-color:#33434d}.cr button.pri{background:var(--ac);border-color:var(--ac)}.cr:last-child{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.cr{display:flex;flex-wrap:wrap;gap:8px;padding:6px 14px}.cr button{flex:1 1 28%;padding:9px 6px;background:#243038;color:#fff;border-color:#33434d}.cr button.pri{background:var(--ac);border-color:var(--ac)}.cr:last-child{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
 .pt{border:1px solid var(--line);border-radius:10px;margin:8px 0;overflow:hidden}.pt h3{font-size:14px;margin:0;padding:8px 12px;background:var(--acl);color:var(--acd)}.pt .pi{display:flex;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line)}.pt .pi .g{flex:1;min-width:0}.pt .pi b{font-variant-numeric:tabular-nums;color:var(--acd)}.pt .pi button{min-height:34px;padding:4px 10px;font-size:13px;flex:none}
 @media(max-width:480px){.flt{grid-template-columns:1fr 1fr}.thr{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:no-preference){.ov .sb{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.4}}}
@@ -196,7 +196,7 @@ function editTile(id,from){const t=id?tile(id):(from?cloneOf(from):{cu:'m2',kind
   pBox(t,o)+'<label>Ghi chú<textarea id="fnote" style="min-height:60px">'+esc(t.note)+'</textarea></label>'+
   dl('lb',uniq(x=>x.brand))+dl('ls',uniq(x=>x.size))+dl('lc',uniq(x=>x.color))+dl('lsf',uniq(x=>x.surface))+
   '<div class="acts"><button class="pri" data-a="savet" data-v="'+(id||'')+'">Lưu mẫu</button>'+(id?'':'<button data-a="savea">Lưu và nhân bản tiếp</button>')+(id&&o?'<button class="dz" data-a="delt" data-v="'+id+'">Xóa</button>':'')+'</div>');
-  $('#fkind').onchange=e=>{$('#pbox').style.display=e.target.value==='tuong'?'':'none'};['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const cc=await cropPick(f);if(!cc)return;pend=fitSrc(cc);$('#pv').innerHTML='<img src="'+pend.full+'" alt="">'}catch(x){alert(x.message)}})
+  $('#fkind').onchange=e=>{$('#pbox').style.display=e.target.value==='tuong'?'':'none'};['fcam','flib'].forEach(i=>$('#'+i).onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const cc=await cropPick(f,$('#fkind')&&$('#fkind').value==='tuong'?2/3:1);if(!cc)return;pend=fitSrc(cc);$('#pv').innerHTML='<img src="'+pend.full+'" alt="">'}catch(x){alert(x.message)}})
   if(sc)setTimeout(()=>{const e=$('#fcode');if(e)e.focus()},60)}
 function saveTile(id,again){const v=i=>{const e=$('#'+i);return e?e.value.trim():undefined};const code=v('fcode'),brand=v('fbrand');
   if(!code)return alert('Hãy nhập mã số của mẫu gạch.');if(!brand)return alert('Hãy nhập tên công ty / hãng.');
@@ -294,24 +294,24 @@ const enc=(c,q)=>{let o=c.toDataURL('image/webp',q);if(o.indexOf('data:image/web
 const szB=u=>(u.length-u.indexOf(',')-1)*.75;
 /* ảnh đầy đủ <= 20 KB: thử khổ lớn trước, tìm chất lượng cao nhất còn vừa 20 KB; thêm ảnh nhỏ 144px cho lưới */
 async function imgFit(f){const url=URL.createObjectURL(f);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}return fitSrc(im)}
-function fitSrc(im){let best='';for(const S of[600,520,460,400,340,280,240]){const c=cvs(im,S);let lo=.3,hi=.9,ok=null;for(let i=0;i<6;i++){const m=(lo+hi)/2,o=enc(c,m);if(szB(o)<=20000){ok=o;lo=m}else hi=m}
+function fitSrc(im){let best='';for(const S of[800,680,600,520,460,400,340,280,240]){const c=cvs(im,S);let lo=.3,hi=.9,ok=null;for(let i=0;i<6;i++){const m=(lo+hi)/2,o=enc(c,m);if(szB(o)<=20000){ok=o;lo=m}else hi=m}
     if(ok){best=ok;if(lo>=.55)break}else if(!best)best=enc(c,.3)}
-  return{full:best,thumb:enc(cvs(im,144),.6)}}
-const mkThumb=async u=>enc(cvs(await loadIm(u),144),.6);
+  return{full:best,thumb:enc(cvs(im,256),.62)}}
+const mkThumb=async u=>enc(cvs(await loadIm(u),256),.62);
 let ihT;const ihSave=()=>{clearTimeout(ihT);ihT=setTimeout(()=>{try{idbP('ihl',IHL)}catch(e){}},400)};
 function setImg(id,u,th,h){th=th||u;TH[id]=th;IHL[id]=h;try{idbP('img:'+id,u);idbP('th:'+id,th)}catch(e){}ihSave()}
-async function fixThumbs(){if(!idb)return;try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id])continue;const u=await idbG(k);if(!u)continue;let th='';try{th=await mkThumb(u)}catch(e){th=u}TH[id]=th;await idbP('th:'+id,th);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}}redraw()}catch(e){}}
+async function fixThumbs(){if(!idb)return;const redo=LS('gm_thv')!=='2';try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id]&&!redo)continue;const u=await idbG(k);if(!u)continue;let th='';try{th=await mkThumb(u)}catch(e){th=u}TH[id]=th;await idbP('th:'+id,th);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}if(redo)await new Promise(r=>setTimeout(r,12))}LS('gm_thv','2');redraw()}catch(e){}}
 const imgH=u=>{u=u.slice(u.indexOf(',')+1);let h=2166136261;for(let i=0;i<u.length;i++){h^=u.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+u.length.toString(36)};
 const pimg=()=>{try{return JSON.parse(LS('gm_pimg')||'[]')}catch(e){return[]}};const pimgSet=a=>LS('gm_pimg',JSON.stringify([...new Set(a)]));
 /* ===== Cắt ảnh trước khi nén ===== */
 const toCan=(im,max)=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);return c};
 const rot90=s=>{const c=document.createElement('canvas');c.width=s.height;c.height=s.width;const x=c.getContext('2d');x.translate(c.width,0);x.rotate(Math.PI/2);x.drawImage(s,0,0);return c};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-async function cropPick(file){const url=URL.createObjectURL(file);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}
-  return new Promise(ok=>{let src=toCan(im,2000),ar=1,dW=0,dH=0,box={x:0,y:0,w:0,h:0},drag=null;
+async function cropPick(file,ar0){const url=URL.createObjectURL(file);let im;try{im=await loadIm(url)}finally{URL.revokeObjectURL(url)}
+  return new Promise(ok=>{let src=toCan(im,2000),ar=ar0||1,dW=0,dH=0,box={x:0,y:0,w:0,h:0},drag=null;
     const o=document.createElement('div');o.className='crp';
     o.innerHTML='<div class="cb"><b>Cắt bỏ phần thừa</b><small>Kéo khung để di chuyển, kéo 4 góc để đổi cỡ</small></div><div class="cw"><div class="cin"><canvas></canvas><div class="cbox"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div></div>'+
-    '<div class="cr">'+[['Tự do',0],['Vuông 1:1',1],['4:3',4/3],['3:4',3/4]].map(a=>'<button data-ar="'+a[1]+'"'+(a[1]===1?' class="pri"':'')+'>'+a[0]+'</button>').join('')+'<button data-c="rot">↻ Xoay</button></div><div class="cr"><button data-c="no">Hủy</button><button class="pri" data-c="ok" style="flex:2">Dùng ảnh này</button></div>';
+    '<div class="cr">'+[['Tự do',0],['Vuông 1:1',1],['Đứng 3:4',3/4],['Đứng 2:3',2/3],['Đứng 1:2',1/2],['Ngang 4:3',4/3]].map(a=>'<button data-ar="'+a[1]+'"'+(Math.abs(a[1]-ar)<.001?' class="pri"':'')+'>'+a[0]+'</button>').join('')+'</div><div class="cr"><button data-c="no">Hủy</button><button data-c="rot">↻ Xoay</button><button class="pri" data-c="ok" style="flex:2">Dùng ảnh này</button></div>';
     document.body.appendChild(o);document.body.style.overflow='hidden';
     const cw=o.querySelector('.cw'),wr=o.querySelector('.cin'),cv=o.querySelector('canvas'),bx=o.querySelector('.cbox');
     const paint=()=>{bx.style.cssText='left:'+box.x+'px;top:'+box.y+'px;width:'+box.w+'px;height:'+box.h+'px'};
@@ -342,13 +342,13 @@ const fitTx=(x,t,mw)=>{if(x.measureText(t).width<=mw)return t;while(t.length>1&&
 function photo(x,im,X,Y,W,H,cover){if(!im){x.fillStyle='#e3e7e9';x.fillRect(X,Y,W,H);x.strokeStyle='#c4cbce';x.lineWidth=4;for(let i=1;i<3;i++){x.beginPath();x.moveTo(X+W*i/3,Y);x.lineTo(X+W*i/3,Y+H);x.moveTo(X,Y+H*i/3);x.lineTo(X+W,Y+H*i/3);x.stroke()}return}
   const k=cover?Math.max(W/im.width,H/im.height):Math.min(W/im.width,H/im.height),w=im.width*k,h=im.height*k;x.save();x.beginPath();x.rect(X,Y,W,H);x.clip();x.imageSmoothingQuality='high';x.drawImage(im,X+(W-w)/2,Y+(H-h)/2,w,h);x.restore()}
 /*parts*/async function priceCard(t,st,area){const W=840,u=(await full(t.id))||TH[t.id];let im=null;if(u)try{im=await loadIm(u)}catch(e){}
-  const a=perM2(t),b=perBox(t),p=sp(t),mp=mpb(t),c=area>0?calc(t,area,+db.s.waste||0):null,AC='#1d5c78',INK='#1b2326',MUT='#5d686d';
+  const ar=im?im.width/im.height:1,a=perM2(t),b=perBox(t),p=sp(t),mp=mpb(t),c=area>0?calc(t,area,+db.s.waste||0):null,AC='#1d5c78',INK='#1b2326',MUT='#5d686d';
   const spec=[t.size?t.size.replace('x','×')+' cm':'',t.color,t.surface,t.brand].filter(Boolean).join('  ·  ');
   const main=a?[money(a),'/m²']:p?[money(p),'/'+cuName(t.cu)]:['Liên hệ',''],sub=a&&b?money(b)+' / thùng'+(mp?'  ('+f2(mp)+' m²)':''):'';
   const nm=t.name&&nz(t.name)!==nz(t.code)?t.name:'',foot=[db.s.shop,db.s.phone].filter(Boolean),note=(db.s.pnote?db.s.pnote+' · ':'')+fmtD(Date.now());
-  const PP=partsOf(t),over=st==='over',PH=W,BH=over?0:(8+30+62+(nm?46:0)+(spec?42:0)+112+(sub?50:0)+(PP.length?22+PP.length*48:0)+(c?84:0)+118),H=PH+BH;
+  const PP=partsOf(t),over=st==='over',PH=Math.round(clamp(W/ar,W,W*1.3)),BH=over?0:(8+30+62+(nm?46:0)+(spec?42:0)+112+(sub?50:0)+(PP.length?22+PP.length*48:0)+(c?84:0)+118),H=PH+BH;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.textBaseline='alphabetic';x.fillStyle='#fff';x.fillRect(0,0,W,H);
-  photo(x,im,0,0,W,PH,over);
+  photo(x,im,0,0,W,PH,over&&ar>=.75);
   const money2=(px,y,col,sh)=>{x.font='800 '+px+'px '+FF;x.fillStyle=col;if(sh){x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=10}x.fillText(main[0],44,y);const w=x.measureText(main[0]).width;x.font='600 '+Math.round(px*.4)+'px '+FF;x.fillText(main[1],44+w+8,y);x.shadowBlur=0};
   if(over){const g=x.createLinearGradient(0,H*(PP.length?.4:.5),0,H);g.addColorStop(0,'rgba(10,18,22,0)');g.addColorStop(1,'rgba(10,18,22,.8)');x.fillStyle=g;x.fillRect(0,H*.4,W,H*.6);
     x.font='800 36px '+FF;const cw=x.measureText(t.code).width+44;x.fillStyle='rgba(255,255,255,.93)';rr(x,28,28,cw,64,14);x.fill();x.fillStyle=INK;x.fillText(t.code,50,73);

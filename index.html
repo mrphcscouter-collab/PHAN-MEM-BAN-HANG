@@ -155,14 +155,14 @@ function vHome(){
   $('#main').innerHTML='<div class="bar"><input id="q" type="search" placeholder="Gõ mã, màu, kích thước, hãng…" autocomplete="off" value="'+esc(q)+'"><button class="pri" data-a="scanfind">📷 Quét</button></div>'+
   '<div class="flt"><select id="fb">'+opts(uniq(t=>t.brand),fb,'Mọi hãng')+'</select><select id="fs">'+opts(uniq(t=>t.size),fs,'Mọi cỡ')+'</select><select id="fc">'+opts(uniq(t=>t.color),fc,'Mọi màu')+'</select>'+
   '<select id="so">'+[['new','Mới nhất'],['pa','Giá thấp → cao'],['pd','Giá cao → thấp'],['code','Theo mã']].map(a=>'<option value="'+a[0]+'"'+(so===a[0]?' selected':'')+'>'+a[1]+'</option>').join('')+'</select></div>'+
-  '<div class="cnt" id="cnt"></div><div class="grid" id="grid"></div><div id="more" style="text-align:center;margin:12px"></div><button class="pri fab" data-a="add">＋ Thêm mẫu</button>';
+  '<div id="imgbn"></div><div class="cnt" id="cnt"></div><div class="grid" id="grid"></div><div id="more" style="text-align:center;margin:12px"></div><button class="pri fab" data-a="add">＋ Thêm mẫu</button>';
   let qT;$('#q').oninput=e=>{q=e.target.value;lim=36;clearTimeout(qT);qT=setTimeout(drawGrid,130)};
   [['fb',v=>fb=v],['fs',v=>fs=v],['fc',v=>fc=v],['so',v=>so=v]].forEach(([i,f])=>$('#'+i).onchange=e=>{f(e.target.value);lim=36;drawGrid()});
   drawGrid()}
 function found(){const k=nz(q).split(/\s+/).filter(Boolean);let L=live().filter(t=>(!fb||t.brand===fb)&&(!fs||t.size===fs)&&(!fc||t.color===fc)&&(!k.length||(x=>k.every(w=>x.includes(w)))(tx(t))));
   const p=t=>perM2(t)||sp(t)||1e15;
   if(so==='pa')L.sort((a,b)=>p(a)-p(b));else if(so==='pd')L.sort((a,b)=>(sp(b)?p(b):0)-(sp(a)?p(a):0));else if(so==='code')L.sort((a,b)=>a.code.localeCompare(b.code,'vi',{numeric:true}));else L.sort((a,b)=>(b.c||0)-(a.c||0));return L}
-function drawGrid(){const g=$('#grid');if(!g)return;const L=found(),n=live().length;$('#cnt').textContent=n?L.length+' / '+n+' mẫu':'';
+function drawGrid(){const g=$('#grid');if(!g)return;const L=found(),n=live().length;$('#cnt').textContent=n?L.length+' / '+n+' mẫu':'';bn();
   g.style.display=L.length?'':'none';
   g.innerHTML=L.slice(0,lim).map(t=>'<div class="tc" data-a="open" data-v="'+t.id+'"><div class="im">'+imgTag(t)+'</div><div class="tx"><b>'+esc(t.code)+'</b><small>'+esc([t.size,t.color].filter(Boolean).join(' · '))+'</small><small>'+esc(t.brand)+'</small><div class="pp">'+priceLine(t)+'</div></div></div>').join('');
   $('#more').innerHTML=!L.length?'<div class="empty">'+(n?'Không có mẫu phù hợp. Thử bỏ bớt bộ lọc.':'Chưa có mẫu gạch nào.<br>Bấm <b>＋ Thêm mẫu</b> để nhập mẫu đầu tiên, hoặc vào <b>Cài đặt</b> để dán cả bảng giá từ Excel.')+'</div>':L.length>lim?'<button data-a="more">Xem thêm '+Math.min(36,L.length-lim)+' mẫu</button>':''}
@@ -282,8 +282,8 @@ function fitSrc(im){let best='';for(const S of[600,520,460,400,340,280,240]){con
   return{full:best,thumb:enc(cvs(im,144),.6)}}
 const mkThumb=async u=>enc(cvs(await loadIm(u),144),.6);
 let ihT;const ihSave=()=>{clearTimeout(ihT);ihT=setTimeout(()=>{try{idbP('ihl',IHL)}catch(e){}},400)};
-function setImg(id,u,th,h){TH[id]=th;IHL[id]=h;try{idbP('img:'+id,u);idbP('th:'+id,th)}catch(e){}ihSave()}
-async function fixThumbs(){if(!idb)return;try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id])continue;const u=await idbG(k);if(!u)continue;try{TH[id]=await mkThumb(u);await idbP('th:'+id,TH[id]);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}}catch(e){}}}catch(e){}}
+function setImg(id,u,th,h){th=th||u;TH[id]=th;IHL[id]=h;try{idbP('img:'+id,u);idbP('th:'+id,th)}catch(e){}ihSave()}
+async function fixThumbs(){if(!idb)return;try{const ks=await rq(kv('readonly').getAllKeys(IDBKeyRange.bound('img:','img:\uffff')));for(const k of ks){const id=k.slice(4);if(TH[id])continue;const u=await idbG(k);if(!u)continue;let th='';try{th=await mkThumb(u)}catch(e){th=u}TH[id]=th;await idbP('th:'+id,th);if(!IHL[id]){IHL[id]=imgH(u);ihSave()}}redraw()}catch(e){}}
 const imgH=u=>{u=u.slice(u.indexOf(',')+1);let h=2166136261;for(let i=0;i<u.length;i++){h^=u.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+u.length.toString(36)};
 const pimg=()=>{try{return JSON.parse(LS('gm_pimg')||'[]')}catch(e){return[]}};const pimgSet=a=>LS('gm_pimg',JSON.stringify([...new Set(a)]));
 /* ===== Cắt ảnh trước khi nén ===== */
@@ -433,20 +433,20 @@ const scanFind=()=>scanOpen('Quét tem QR trên viên gạch',raw=>{const t=find
 /* ===== Đồng bộ Google Drive (cùng cách với phần mềm bán hàng) ===== */
 const GCID_DEFAULT='';
 const GSCOPE='https://www.googleapis.com/auth/drive.file',GFILE='GachMen_DuLieu.json',GDIR='GachMen_HinhAnh';
-let gTok=null,gExp=0,gBusy=false,gState='off',gMsg='',gPushT=0,gSeq=0,gLibP=null,imgMsg='';
+let gTok=null,gExp=0,gBusy=false,gState='off',gMsg='',gPushT=0,gSeq=0,gLibP=null,imgMsg='',gSilentAt=0,imgBusy=false;
 const gCid=()=>(LS('gm_cid')||GCID_DEFAULT||'').trim(),gOn=()=>LS('gm_on')==='1',gDirtyF=()=>LS('gm_dirty')==='1',gValid=()=>!!gTok&&gExp>Date.now()+60000;
 function gDirty(){if(booting||!gOn())return;gSeq++;LS('gm_dirty','1');gSched();gUI()}
 function gSched(){if(!gOn())return;clearTimeout(gPushT);gPushT=setTimeout(()=>gSync(),1500)}
 function gSet(s,m){gState=s;gMsg=m||'';gUI()}
-const gText=()=>!gOn()?'Chưa kết nối.':(gMsg||'Đã kết nối.')+(gDirtyF()&&gState==='ok'?' Có thay đổi đang chờ đẩy lên Drive.':'')+(imgMsg?' '+imgMsg:'');
+const gText=()=>!gOn()?'Chưa kết nối.':(gMsg||'Đã kết nối.')+(gDirtyF()&&gState==='ok'?' Có thay đổi đang chờ đẩy lên Drive.':'')+(imgMsg?' '+imgMsg:'')+imgCnt();
 function gUI(){const b=$('#syncbtn');if(b){const s=!gOn()?'off':(gState==='ok'&&gDirtyF()?'dirty':gState),T={off:'☁ Chưa đồng bộ',ok:'☁ Đã đồng bộ',busy:'☁ Đang đồng bộ…',dirty:'☁ Chờ đồng bộ',auth:'☁ Đăng nhập lại',err:'☁ Lỗi đồng bộ',offline:'☁ Offline'};b.textContent=T[s]||T.off;b.className='s-'+s;b.title=gText()}const st=$('#gstat');if(st)st.innerHTML='<b>Trạng thái:</b> '+esc(gText())}
 function gLib(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();return gLibP||(gLibP=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=ok;s.onerror=()=>{gLibP=null;no(Object.assign(new Error('Không tải được thư viện đăng nhập Google. Hãy kiểm tra Internet.'),{net:true}))};document.head.appendChild(s)}))}
 function gLoadTok(){try{const t=JSON.parse(LS('gm_tok'));if(t&&t.exp>Date.now()+60000){gTok=t.t;gExp=t.exp}}catch(e){}}
-async function gToken(){if(gValid())return gTok;if(!gCid())throw Object.assign(new Error('Chưa nhập Client ID Google.'),{auth:true});await gLib();
+async function gToken(silent){if(gValid())return gTok;if(!gCid())throw Object.assign(new Error('Chưa nhập Client ID Google.'),{auth:true});await gLib();
   return new Promise((ok,no)=>{const hint=LS('gm_hint')||undefined;const c=google.accounts.oauth2.initTokenClient({client_id:gCid(),scope:GSCOPE,hint,
     callback:r=>{if(r.error)return no(Object.assign(new Error(r.error_description||r.error),{auth:true}));gTok=r.access_token;gExp=Date.now()+(+r.expires_in||3600)*1000;LS('gm_tok',JSON.stringify({t:gTok,exp:gExp}));ok(gTok)},
     error_callback:e=>no(Object.assign(new Error(e&&e.type==='popup_closed'?'Đã đóng cửa sổ đăng nhập Google.':'Không mở được cửa sổ đăng nhập Google (trình duyệt có thể đang chặn cửa sổ bật lên).'),{auth:true}))});
-    c.requestAccessToken({prompt:hint?'':'select_account'})})}
+    c.requestAccessToken({prompt:silent?'none':(hint?'':'select_account')})})}
 async function gFetch(url,opt={},retry=true){const t=await gToken(),r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+t}});
   if(r.status===401&&retry){gTok=null;LS('gm_tok',null);return gFetch(url,opt,false)}if(!r.ok){const x=await r.text().catch(()=>'');throw new Error('Drive '+r.status+': '+x.slice(0,200))}return r}
 const API='https://www.googleapis.com/drive/v3/files',UP='https://www.googleapis.com/upload/drive/v3/files';
@@ -459,6 +459,7 @@ function apply(m){const before=sig(db);db=m;save(false);ownUI();$('#shop').textC
 async function gSync(o={}){
   if(gBusy||!gOn())return;
   if(!navigator.onLine)return gSet('offline','Đang offline. Dữ liệu lưu trên máy, sẽ tự đồng bộ khi có mạng.');
+  if(!gValid()&&!o.interactive&&gCid()&&LS('gm_hint')&&Date.now()-gSilentAt>3e5){gSilentAt=Date.now();try{await Promise.race([gToken(true),new Promise((_,no)=>setTimeout(()=>no(0),6000))])}catch(e){}}
   if(!gValid()&&!o.interactive)return gSet('auth','Phiên đăng nhập Google đã hết hạn. Bấm nút ☁ trên đầu trang để đăng nhập lại. Dữ liệu vẫn lưu trên máy.');
   gBusy=true;gSet('busy','Đang đồng bộ…');let ok=false,chg=false;
   try{
@@ -475,7 +476,7 @@ async function gSync(o={}){
       if(seq===gSeq)LS('gm_dirty','0');break}
     ok=true;gSet('ok','Đã đồng bộ lúc '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+'.');
     if(o.manual)toast('Đã đồng bộ với Google Drive');
-    if(o.manual||chg||pimg().length||Date.now()-(+LS('gm_ilast')||0)>3e5)imgSync().catch(e=>{imgMsg='Ảnh chưa đồng bộ được, sẽ thử lại.';gUI()});
+    const il=Date.now()-(+LS('gm_ilast')||0),miss=live().some(t=>t.ih&&(!TH[t.id]||IHL[t.id]!==t.ih));if(o.manual||chg||pimg().length||(miss&&il>25e3)||il>3e5)imgSync().catch(e=>{imgMsg='Ảnh chưa đồng bộ được, sẽ thử lại.';gUI()});
   }catch(e){const msg=e.message||String(e);gSet(e.auth||/Drive 40[13]/.test(msg)?'auth':(e.net||/Failed to fetch|NetworkError/i.test(msg)?'offline':'err'),msg);if(o.manual)alert('Đồng bộ chưa thành công: '+msg)}
   finally{gBusy=false;gUI();if(ok&&gDirtyF())gSched()}}
 /* ảnh: mỗi ảnh một file gm_<mã mẫu> trong thư mục GachMen_HinhAnh; máy khác chỉ tải ảnh còn thiếu */
@@ -485,22 +486,36 @@ async function gFolder(){const j=await(await gFetch(API+'?q='+encodeURIComponent
 async function upImg(id,u,fid,F){const mime=u.slice(5,u.indexOf(';')),bin=atob(u.slice(u.indexOf(',')+1)),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
   const bd='gi'+uid(),meta=JSON.stringify(Object.assign({name:'gm_'+id,mimeType:mime},fid?{}:{parents:[F]})),body=new Blob(['--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+meta+'\r\n--'+bd+'\r\nContent-Type: '+mime+'\r\n\r\n',arr,'\r\n--'+bd+'--']);
   return(await(await gFetch(UP+(fid?'/'+fid:'')+'?uploadType=multipart&fields=id',{method:fid?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body})).json()).id}
-async function imgDown(id){const b=await(await gFetch(API+'/'+id+'?alt=media')).blob();let u=await new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok(f.result);f.onerror=no;f.readAsDataURL(b)});if(!/^data:image\//.test(u))u='data:image/webp;base64,'+u.slice(u.indexOf(',')+1);return u}
-async function imgSync(){const F=await gFolder(),rem={};let pt='';
-  do{const j=await(await gFetch(API+'?q='+encodeURIComponent("'"+F+"' in parents and trashed=false")+'&fields=nextPageToken,files(id,name)&pageSize=1000'+(pt?'&pageToken='+pt:''))).json();(j.files||[]).forEach(f=>rem[f.name]=f.id);pt=j.nextPageToken||''}while(pt);
-  const left=[];let up=0;for(const id of pimg()){const t=tile(id),u=await full(id);if(!t||!u)continue;try{rem['gm_'+id]=await upImg(id,u,rem['gm_'+id],F);up++}catch(e){left.push(id);if(/Drive 40[13]|Failed to fetch/.test(e.message))throw e}}pimgSet(left);
-  const need=live().filter(t=>t.ih&&rem['gm_'+t.id]&&!left.includes(t.id)&&IHL[t.id]!==t.ih);
-  await pool(need,4,async t=>{const u=await imgDown(rem['gm_'+t.id]);setImg(t.id,u,await mkThumb(u).catch(()=>''),t.ih)});LS('gm_ilast',String(Date.now()));
-  imgMsg=(need.length||up)?'Ảnh: tải về '+need.length+', đẩy lên '+up+'.':'';gUI();if(need.length)redraw()}
+async function imgDown(id){const b=await(await gFetch(API+'/'+id+'?alt=media')).blob();const u=await new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok(f.result);f.onerror=no;f.readAsDataURL(b)});
+  const b64=u.slice(u.indexOf(',')+1),mime=b64.startsWith('/9j/')?'image/jpeg':b64.startsWith('UklG')?'image/webp':b64.startsWith('iVBO')?'image/png':null;
+  if(!mime)throw new Error('File ảnh trên Drive không đọc được');return'data:'+mime+';base64,'+b64}
+function paintTile(id){const t=tile(id),e=document.querySelector('.tc[data-v="'+id+'"] .im');if(e&&t)e.innerHTML=imgTag(t);bn()}
+function bn(){const e=$('#imgbn');if(!e)return;const m=live().filter(t=>t.ih&&!TH[t.id]).length;
+  e.innerHTML=m?'<div class="cost" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:170px">'+m+' mẫu chưa có ảnh trên máy này'+(imgBusy?' (đang tải…)':'')+'</span><button data-a="imgfix" style="min-height:34px;padding:4px 12px">'+(gOn()?'Tải ảnh ngay':'Kết nối Drive')+'</button></div>':''}
+const imgCnt=()=>{const L=live().filter(t=>t.ih),n=L.filter(t=>TH[t.id]).length;return L.length?' Ảnh trên máy này: '+n+'/'+L.length+'.':''};
+/* đồng bộ ảnh hai chiều, tự sửa lỗi: đẩy ảnh máy này có mà Drive chưa có, tải ảnh Drive có mà máy này chưa có */
+async function imgSync(){if(imgBusy)return;imgBusy=true;imgMsg='Đang đồng bộ ảnh…';gUI();bn();
+  try{const F=await gFolder(),rem={};let pt='';
+    do{const j=await(await gFetch(API+'?q='+encodeURIComponent("'"+F+"' in parents and trashed=false")+'&fields=nextPageToken,files(id,name)&pageSize=1000'+(pt?'&pageToken='+pt:''))).json();(j.files||[]).forEach(f=>rem[f.name]=f.id);pt=j.nextPageToken||''}while(pt);
+    const errs=[];let up=0,dn=0;
+    const send=new Set(pimg());live().forEach(t=>{if(t.ih&&TH[t.id]&&!rem['gm_'+t.id])send.add(t.id)});const left=[];
+    await pool([...send],4,async id=>{const t=tile(id);if(!t||IHL[id]!==t.ih)return;const u=await full(id);if(!u)return;try{rem['gm_'+id]=await upImg(id,u,rem['gm_'+id],F);up++}catch(e){left.push(id);errs.push(e.message);if(/Drive 40[13]|Failed to fetch/.test(e.message))throw e}});
+    pimgSet(left);
+    const need=live().filter(t=>t.ih&&rem['gm_'+t.id]&&!left.includes(t.id)&&(!TH[t.id]||IHL[t.id]!==t.ih)).sort((a,b)=>(b.c||0)-(a.c||0));
+    await pool(need,6,async t=>{try{const u=await imgDown(rem['gm_'+t.id]);let th='';try{th=await mkThumb(u)}catch(e){}setImg(t.id,u,th||u,t.ih);dn++;paintTile(t.id)}catch(e){errs.push(e.message);if(/Drive 40[13]|Failed to fetch/.test(e.message))throw e}});
+    const gone=live().filter(t=>t.ih&&!TH[t.id]&&!rem['gm_'+t.id]).length;
+    imgMsg=(dn||up?'Ảnh: tải về '+dn+', đẩy lên '+up+'.':'')+(gone?' '+gone+' mẫu chưa có ảnh trên Drive: hãy mở phần mềm trên máy đã chụp ảnh và bấm đồng bộ.':'')+(errs.length?' Lỗi ảnh: '+errs[0].slice(0,90):'');
+  }catch(e){imgMsg='Ảnh chưa đồng bộ được: '+String(e.message||e).slice(0,90);throw e}
+  finally{imgBusy=false;LS('gm_ilast',String(Date.now()));gUI();bn()}}
 async function gConnect(){const e=$('#gcid');if(e)LS('gm_cid',e.value.trim());if(!gCid())return alert('Hãy dán OAuth Client ID vào ô Client ID trước (xem hướng dẫn bên dưới).');
   try{LS('gm_hint',null);gTok=null;LS('gm_tok',null);await gToken();try{const u=(await(await gFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)')).json()).user;if(u&&u.emailAddress)LS('gm_hint',u.emailAddress)}catch(e){}
     LS('gm_on','1');LS('gm_fid',null);LS('gm_ver',null);LS('gm_dirty','1');pimgSet(Object.keys(IHL));await gSync({interactive:true,manual:true})}catch(e){gSet('err',e.message);alert(e.message)}
   if(tab==='settings')go('settings')}
 function gDisc(){if(!confirm('Ngắt kết nối Google Drive trên máy này? Dữ liệu trên Drive và trên máy vẫn được giữ nguyên, chỉ ngừng đồng bộ.'))return;['gm_on','gm_tok','gm_fid','gm_ver','gm_dirty','gm_hint','gm_pimg'].forEach(k=>LS(k,null));gTok=null;imgMsg='';gSet('off','');go('settings')}
 function syncCard(){const on=gOn();return'<div class="card"><h2>Đồng bộ Google Drive</h2><p><small>Dữ liệu lưu thành file <b>'+GFILE+'</b> và ảnh trong thư mục <b>'+GDIR+'</b> trên Google Drive của bạn. Mọi điện thoại đăng nhập cùng tài khoản Google sẽ thấy cùng một bảng mẫu gạch (kiểm tra mỗi 30 giây, đẩy lên ngay sau mỗi thay đổi). Hai người cùng sửa một lúc thì phần mềm tự gộp, mẫu nào sửa sau cùng được giữ. Mất mạng vẫn tra cứu bình thường, có mạng lại tự đồng bộ. Phiên đăng nhập Google hết hạn sau khoảng 1 giờ; khi nút ☁ trên đầu trang chuyển đỏ, bấm vào để đăng nhập lại.</small></p>'+
-  '<label>OAuth Client ID<input id="gcid" value="'+esc(gCid())+'" placeholder="xxxxxxxx.apps.googleusercontent.com" '+(on?'disabled':'')+' autocomplete="off"></label><div class="row">'+(on?'<button class="pri" data-a="gsync">Đồng bộ ngay</button><button class="dz" data-a="gdisc">Ngắt kết nối</button>':'<button class="pri" data-a="gconnect">Kết nối Google Drive</button>')+'</div><p id="gstat"></p>'+
+  '<label>OAuth Client ID<input id="gcid" value="'+esc(gCid())+'" placeholder="xxxxxxxx.apps.googleusercontent.com" '+(on?'disabled':'')+' autocomplete="off"></label><div class="row">'+(on?'<button class="pri" data-a="gsync">Đồng bộ ngay</button><button data-a="imgfix">Đồng bộ lại ảnh</button><button class="dz" data-a="gdisc">Ngắt kết nối</button>':'<button class="pri" data-a="gconnect">Kết nối Google Drive</button>')+'</div><p id="gstat"></p>'+
   '<details><summary>Hướng dẫn tạo Client ID (làm một lần)</summary><ol style="line-height:1.6"><li>Đưa phần mềm lên một địa chỉ <b>https</b> cố định (GitHub Pages, Netlify, Cloudflare Pages). Mở file trực tiếp từ máy sẽ không đăng nhập Google và không quét được camera.</li><li><b>Nếu đã tạo Client ID cho phần mềm bán hàng, dùng lại đúng Client ID đó</b>: chỉ cần thêm địa chỉ web mới vào mục Authorized JavaScript origins (nếu cùng tên miền thì không cần thêm gì).</li><li>Nếu chưa có: vào <b>console.cloud.google.com</b>, tạo Project, bật <b>Google Drive API</b>.</li><li>Ở <b>OAuth consent screen</b> chọn <b>External</b>, thêm email Google của bạn vào <b>Test users</b>.</li><li>Ở <b>Credentials</b> tạo <b>OAuth client ID</b> loại <b>Web application</b>, điền địa chỉ web vào <b>Authorized JavaScript origins</b> (chỉ tên miền, ví dụ <code>https://tencuahang.github.io</code>).</li><li>Dán Client ID vào ô trên, bấm <b>Kết nối Google Drive</b>. Trên điện thoại nhân viên: mở cùng địa chỉ, dán cùng Client ID, đăng nhập cùng tài khoản Google.</li></ol><small>Phần mềm chỉ đọc và ghi các file do chính nó tạo ra, không đụng tới file khác trong Drive.</small></details></div>'}
-function gInit(){gLoadTok();gUI();if(gOn()){if(gValid())gSync();else gSet('auth','Phiên đăng nhập Google đã hết hạn. Bấm nút ☁ trên đầu trang để đăng nhập lại. Dữ liệu vẫn lưu trên máy.')}
+function gInit(){gLoadTok();if(live().some(t=>t.ih&&!TH[t.id]))LS('gm_ilast','0');gUI();if(gOn()){if(gValid())gSync();else gSet('auth','Phiên đăng nhập Google đã hết hạn. Bấm nút ☁ trên đầu trang để đăng nhập lại. Dữ liệu vẫn lưu trên máy.')}
   setInterval(()=>{if(!document.hidden&&gOn()&&gValid())gSync()},30000);addEventListener('online',()=>{if(gOn()&&gValid())gSync()});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gOn()&&gValid())gSync()});
   document.addEventListener('input',e=>{if(e.target&&e.target.id==='gcid')LS('gm_cid',e.target.value.trim())})}
 
@@ -510,7 +525,7 @@ const A={
  gbtn:()=>{if(!gCid()||!gOn())return go('settings');gSync({interactive:true,manual:true})},gsync:()=>gSync({interactive:true,manual:true}),gconnect:gConnect,gdisc:gDisc,
  scanfind:scanFind,add:()=>editTile(''),more:()=>{lim+=36;drawGrid()},open:v=>openTile(v),edit:v=>editTile(v),savet:v=>saveTile(v),
  delt:v=>{const t=tile(v);if(t&&confirm('Xóa mẫu '+t.code+'? Mẫu cũng biến mất trên các điện thoại khác.')){t.del=1;t.u=Date.now();dr.lines=dr.lines.filter(l=>l.id!==v);dsave();delete TH[v];delete IHL[v];try{idbD('img:'+v);idbD('th:'+v);ihSave()}catch(e){}save();shut();redraw()}},
- clone:v=>editTile('',v),zalo:v=>{const e=$('#ca');zaloSheet(v,e?+e.value||0:0)},zsend:zSend,zsave:zSave,zcopy:()=>{navigator.clipboard.writeText(zMsg()).then(()=>toast('Đã sao chép lời nhắn'),()=>prompt('Sao chép:',zMsg()))},zst:v=>{zs.st=v;LS('gm_cs',v);document.querySelectorAll('#zst button').forEach(b=>b.classList.toggle('pri',b.dataset.v===v));zRender()},savea:()=>saveTile('',true),pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
+ clone:v=>editTile('',v),imgfix:()=>{if(!gOn())return go('settings');gSync({interactive:true,manual:true})},zalo:v=>{const e=$('#ca');zaloSheet(v,e?+e.value||0:0)},zsend:zSend,zsave:zSave,zcopy:()=>{navigator.clipboard.writeText(zMsg()).then(()=>toast('Đã sao chép lời nhắn'),()=>prompt('Sao chép:',zMsg()))},zst:v=>{zs.st=v;LS('gm_cs',v);document.querySelectorAll('#zst button').forEach(b=>b.classList.toggle('pri',b.dataset.v===v));zRender()},savea:()=>saveTile('',true),pick:v=>$(v==='cam'?'#fcam':'#flib').click(),
  zoom:async v=>{const u=(await full(v))||TH[v];if(!u)return;const z=document.createElement('div');z.className='zm';z.innerHTML='<img src="'+u+'" alt="">';z.onclick=()=>z.remove();document.body.appendChild(z)},
  addq:v=>{if(dr.lines.some(l=>l.id===v))toast('Mẫu này đã có trong báo giá');else{dr.lines.push({id:v,qty:0});dsave();toast('Đã thêm vào báo giá')}shut()},
  rmq:v=>{dr.lines.splice(+v,1);dsave();vQuote()},clrq:()=>{if(confirm('Xóa báo giá đang soạn?')){dr={cust:'',phone:'',lines:[]};dsave();vQuote()}},
@@ -535,7 +550,7 @@ document.addEventListener('change',e=>{const b=e.target;if(b.tagName==='SELECT'&
 function route(){const m=location.hash.match(/#m=(.+)$/);if(!m)return;const t=findCode(location.hash);history.replaceState(null,'',location.pathname+location.search);
   if(t){go('home');openTile(t.id)}else toast(live().length?'Không tìm thấy mẫu trong dữ liệu.':'Máy này chưa có dữ liệu. Hãy kết nối Google Drive ở Cài đặt rồi quét lại.')}
 addEventListener('hashchange',route);
-async function boot(){try{idb=await idbO();db=normDb(await idbG('db'));IHL=(await idbG('ihl'))||{};const R=IDBKeyRange.bound('th:','th:\uffff'),ks=await rq(kv('readonly').getAllKeys(R)),vs=await rq(kv('readonly').getAll(R));ks.forEach((k,i)=>TH[k.slice(3)]=vs[i])}catch(e){idb=null;try{db=normDb(JSON.parse(LS('gm_db')))}catch(x){db=newDb()}}
+async function boot(){try{idb=await idbO();db=normDb(await idbG('db'));IHL=(await idbG('ihl'))||{};const R=IDBKeyRange.bound('th:','th:\uffff'),ks=await rq(kv('readonly').getAllKeys(R)),vs=await rq(kv('readonly').getAll(R));ks.forEach((k,i)=>{if(vs[i])TH[k.slice(3)]=vs[i]});Object.keys(IHL).forEach(k=>{if(!TH[k])delete IHL[k]})}catch(e){idb=null;try{db=normDb(JSON.parse(LS('gm_db')))}catch(x){db=newDb()}}
   booting=false;go('home');gInit();route();setTimeout(fixThumbs,1500)}
 boot();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
